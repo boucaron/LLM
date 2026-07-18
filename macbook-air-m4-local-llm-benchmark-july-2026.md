@@ -6,6 +6,8 @@ This report is not intended to compare model quality or reasoning ability. The g
 
 As a reference point, I currently use Gemma 4 26B A4B with a 32K-token context window. During extended sessions, generation typically starts at around 30 tok/s before gradually decreasing toward 20 tok/s due to the combined effects of context growth and thermal throttling.
 
+Update 18/7/2026: I use also Qwen 3 Coder 30B A3B Instruct, it provides shorter and faster answers. Sessions starts around 40 tok/s and gradually decreasing also.
+
 Because models generate different numbers of tokens, the **later** prompts are sometimes run on a hotter machine than others, and longer generations can induce more thermal throttling.
 
 This is a **practical inference benchmark**, not a synthetic one. The objective is to measure the experience of using these models interactively on a fanless laptop under realistic conditions, including long generations and thermal throttling.
@@ -25,12 +27,13 @@ Note that Apple Silicon uses unified memory shared between CPU and GPU, so the r
 
 After testing several recent GGUF models on a MacBook Air M4 (24 GB), I found that:
 
-* **Gemma 4 26B A4B** offers the best overall balance of responsiveness, memory usage, and perceived capability, delivering around 30 tok/s despite its large size.
+* **Gemma 4 26B A4B** offers one of the best overall balance of responsiveness, memory usage, and perceived capability, delivering around 30 tok/s despite its large size.
 * **Qwen 3.5 9B** provides the best dense-model balance between speed and capability.
 * **Qwen 3 14B** is noticeably slower because all parameters are active during inference.
 * **Qwen 3.6 27B** exceeds the practical memory limits of a 24 GB Air and swaps heavily without KV cache quantification reduction.
 * **LFM 8B A1B** demonstrates how efficient MoE models can be, sustaining more than 60 tok/s.
 * **Prism Bonsai 27B** fits easily in memory, but it is too slow to be usable with about 10 to 6 tok/s.
+* **Qwen 3 Coder 30B A3B Instruct** is providing one of the best overall performance, responsiveness, memory usage, delivering about 37 tok/s despite its large size.
 * Quantized KV cache saves 2–3 GB of memory but slightly reduced throughput in these tests.
 
 Reported memory usage refers to total system memory consumption, including background applications such as VS Code, Terminal, Google Chrome (with a few tabs), and Safari.
@@ -38,17 +41,18 @@ Reported memory usage refers to total system memory consumption, including backg
 
 | Model            | Avg tok/s   | Memory       | Practical on 24 GB? |
 | ---------------- | ----------- | ------------ | ------------------- |
-| Gemma 4 26B A4B  | \~30        | 22 GB        | ⭐⭐⭐⭐⭐          |
+| Gemma 4 26B A4B  | \~30        | 22 GB        | ⭐⭐⭐⭐⭐         |
 | Qwen 3.5 9B      | \~15        | Moderate     | ⭐⭐⭐⭐☆          |
-| Qwen 3 14B       | \~10        | High         | ⭐⭐⭐☆☆          |
-| Gemma 4 12B      | \~11        | Moderate     | ⭐⭐⭐☆☆          |
+| Qwen 3 14B       | \~10        | High         | ⭐⭐⭐☆☆           |
+| Gemma 4 12B      | \~11        | Moderate     | ⭐⭐⭐☆☆           |
 | LFM 8B A1B       | \~62        | Moderate     | ⭐⭐⭐⭐☆          |
-| Qwen 3.6 27B     | \~5         | 22 GB        | ⭐⭐☆☆☆          |
-| Prism Bonsai 27B | \~6 to ~10 | 17GB to 19GB | ⭐⭐⭐☆☆          |
+| Qwen 3.6 27B     | \~5         | 22 GB        | ⭐⭐☆☆☆            |
+| Prism Bonsai 27B | \~6 to ~10 | 17GB to 19GB  | ⭐⭐⭐☆☆           |
+| Qwen 3 Coder 30B A3B Instruct | \~37 | 21GB   | ⭐⭐⭐⭐⭐         |
 
 # LLM Models
 
-All those models were sourced from Unsloth.ai
+All those models were sourced from Unsloth.ai, except for a few.
 
 - Gemma 4 26B A4B
   - gemma-4-26B-A4B-it-UD-IQ2_XXS.gguf [Link](https://huggingface.co/unsloth/gemma-4-26B-A4B-it-GGUF/blob/main/gemma-4-26B-A4B-it-UD-IQ2_XXS.gguf)
@@ -69,6 +73,8 @@ All those models were sourced from Unsloth.ai
 - Prism Bonsai 27B
   - Ternary-Bonsai-27B-Q2_0.gguf [Link](https://huggingface.co/prism-ml/Ternary-Bonsai-27B-gguf/blob/main/Ternary-Bonsai-27B-Q2_0.gguf)
   - Bonsai-27B-Q1_0.gguf [Link](https://huggingface.co/prism-ml/Bonsai-27B-gguf/blob/main/Bonsai-27B-Q1_0.gguf)
+- Qwen 3 Coder 30B A3B Instruct
+  - Qwen3-Coder-30B-A3B-Instruct-UD-IQ2_XXS.gguf [Link](https://huggingface.co/unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF/blob/main/Qwen3-Coder-30B-A3B-Instruct-UD-IQ2_XXS.gguf)
 
 ## Prompts Used
 
@@ -575,6 +581,36 @@ Memory usage is slightly lower about 16.5 GB to 17.5 GB at the end of the last p
 
 Not yet usable but it is slight improvement. The memory usage is really good too.
 
+## Qwen 3 Coder 30B A3B Instruct
+
+Now it is a classic and it not disappoint, it is fast, it is accurate, it has low babble.
+
+```bash
+llama-b9940/llama-server \
+-m ../Qwen3-Coder-30B-A3B-Instruct-UD-IQ2_XXS.gguf \
+--jinja \
+-ngl 99 \
+--ctx-size 32768 \
+--temp 0.7 \
+--min-p 0.0 \
+--top-p 0.80 \
+--top-k 20 \
+--repeat-penalty 1.05 \
+-fa on \
+--cache-type-k q4_0 \
+--cache-type-v q4_0 \
+-np 1 \
+--port 8080
+```
+
+Prompt 1: Output 272 tokens 40.48 t/s
+
+Prompt 2: Output 341 tokens 39.26 t/s
+
+Prompt 3: Output 324 tokens 38.02 t/s
+
+I was happily surprised by the speed and the limited amount of tokens. I run it a few times to be sure, this is not a cherry pick and no it is very consistent.
+
 # Sustained Performance
 
 The MacBook Air is fanless, so sustained workloads behave differently from actively cooled systems:
@@ -603,3 +639,7 @@ These results should be viewed as practical guidance rather than absolute rankin
 
 * Update flags to reduce number of parallel sequences to decode (-np 1)
 * Add Prism Bonsai 27B
+
+18/07/2026:
+
+* Add Qwen 3 Coder 30B A3B Instruct
