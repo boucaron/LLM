@@ -6,7 +6,7 @@ This report is not intended to compare model quality or reasoning ability. The g
 
 As a reference point, I currently use Gemma 4 26B A4B with a 32K-token context window. During extended sessions, generation typically starts at around 30 tok/s before gradually decreasing toward 20 tok/s due to the combined effects of context growth and thermal throttling.
 
-Update 18/7/2026: I use also Qwen 3 Coder 30B A3B Instruct, it provides shorter and faster answers. Sessions starts around 40 tok/s and gradually decreasing also.
+Update 18/7/2026: I use also Qwen 3 Coder 30B A3B Instruct. It provides shorter and faster answers. Sessions start around 40 tok/s and gradually decreasing also.
 
 Because models generate different numbers of tokens, the **later** prompts are sometimes run on a hotter machine than others, and longer generations can induce more thermal throttling.
 
@@ -30,9 +30,9 @@ Note that Apple Silicon uses unified memory shared between CPU and GPU, so the r
 After testing several recent GGUF models on a MacBook Air M4 (24 GB), I found that:
 
 * **Gemma 4 26B A4B** offers one of the best overall balance of responsiveness, memory usage, and perceived capability, delivering around 30 tok/s despite its large size.
-* **Qwen 3.5 9B** provides the best dense-model balance between speed and capability.
+* **Qwen 3.5 9B** provides the best dense-model balance between speed and practical usability in this tests.
 * **Qwen 3 14B** is noticeably slower because it is a dense model: all 14B parameters participate in every token generation, unlike MoE models where only a subset of parameters are activated.
-* **Qwen 3.6 27B** exceeds the practical memory limits of a 24 GB Air and swaps heavily without KV cache quantification reduction.
+* **Qwen 3.6 27B** exceeds the practical memory limits of a 24 GB Air and swaps heavily without KV cache quantization reduction.
 * **LFM 8B A1B** demonstrates how efficient MoE models can be, sustaining more than 60 tok/s.
 * **Prism Bonsai 27B** fits comfortably within memory limits, but it is too slow to be usable with about 10 to 6 tok/s.
 * **Qwen 3 Coder 30B A3B Instruct** was one of the fastest large models tested, combining high throughput (~37 tok/s) with strong coding-oriented behavior and low verbosity.
@@ -90,7 +90,7 @@ All those models were sourced from Unsloth.ai, except for a few.
 
 ## Gemma 4 26B A4B
 
-**Note:** Gemma 4 26B A4B is a Mixture-of-Experts (MoE) model. Although it contains approximately 26 billion parameters in total, only about 4 billion are active during each token generation, which explains its much higher throughput compared with similarly sized dense models.
+**Note:** Gemma 4 26B A4B is a Mixture-of-Experts (MoE) model. Although it contains approximately 26 billion parameters in total, only about 4 billion are active during each token generation, which is one of the main reasons it achieves much higher throughput than similarly sized dense models..
 
 ### Default KV Cache, FA Off
 
@@ -554,7 +554,7 @@ Memory usage is slightly lower about 18.77 GB to 19.47GB at the end of the last 
 
 The token per seconds is getting slightly lower at the end of run 1, for sure thermal throttling, but may be something else. No swapping, nothing like that. Retried a second time.
 
-I would say it is not really usable, may be on a Pro or Max model thanks to the additional  memory bandwidth. It fits without any issue, there is enough room to put large context too. Still, this is really interesting because if there are MOE variants.
+I would say it is not really usable. It may become more practical on Pro or Max models, where additional memory bandwidth can significantly improve large-model inference. It fits without any issue, there is enough room to put large context too. Still, this is really interesting because if there are MOE variants.
 
 ### Variant 1 Bit
 
@@ -634,6 +634,7 @@ The MacBook Air is fanless, so sustained workloads behave differently from activ
 * On Apple Silicon, MoE models change the usual relationship between model size and speed. A 30B MoE model can outperform smaller dense models because only a fraction of parameters are active during generation.
 * A fanless 24 GB M4 MacBook Air can realistically run surprisingly large MoE models, while dense models above ~14B become bandwidth- and memory-limited.
 * The fanless MacBook Air remains highly capable for local inference, although sustained workloads eventually trigger thermal throttling.
+* The main limitation of the M4 Air is not only memory capacity but memory bandwidth: large dense models can fit after aggressive quantization but remain slow because every token requires processing all parameters.
 
 These results should be viewed as practical guidance rather than absolute rankings, since model capabilities, quantization formats, inference engines, and future llama.cpp optimizations will continue to evolve.
 
