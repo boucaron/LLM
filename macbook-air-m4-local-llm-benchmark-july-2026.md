@@ -8,6 +8,8 @@ As a reference point, I currently use Gemma 4 26B A4B with a 32K-token context w
 
 Update 18/7/2026: I use also Qwen 3 Coder 30B A3B Instruct. It provides shorter and faster answers. Sessions start around 40 tok/s and gradually decreasing also.
 
+Update 19/7/2026: I use also Qwen 3.6 35B A3B Instruct. It provides answers a bit longer than the previous Qwen 3 Coder, but a bit more knowledge. Sessions start around 30 tok/s and gradually decreasing also.
+
 Because models generate different numbers of tokens, the **later** prompts are sometimes run on a hotter machine than others, and longer generations can induce more thermal throttling.
 
 This is a **practical inference benchmark**, not a synthetic one. The objective is to measure the experience of using these models interactively on a fanless laptop under realistic conditions, including long generations and thermal throttling.
@@ -36,6 +38,7 @@ After testing several recent GGUF models on a MacBook Air M4 (24 GB), I found th
 * **LFM 8B A1B** demonstrates how efficient MoE models can be, sustaining more than 60 tok/s.
 * **Prism Bonsai 27B** fits comfortably within memory limits, but it is too slow to be usable with about 10 to 6 tok/s.
 * **Qwen 3 Coder 30B A3B Instruct** was one of the fastest large models tested, combining high throughput (~37 tok/s) with strong coding-oriented behavior and low verbosity.
+* **Qwen 3.6 35B A3B** (set in instruct mode) is very fast too, it has a bit more knowledge than Qwen 3 Coder or Gemma 4 26B, and it delivers about 27 tok/s despite being the biggest. Its output is a bit more verbose than Qwen 3 Coder.
 * Quantized KV cache saves 2–3 GB of memory but slightly reduced throughput in these tests.
 
 Reported memory usage refers to total system memory consumption, including background applications such as VS Code, Terminal, Google Chrome (with a few tabs), and Safari.
@@ -43,7 +46,7 @@ Reported memory usage refers to total system memory consumption, including backg
 
 | Model                         | Avg tok/s   | Memory       | Practical on 24 GB? |
 | ----------------------------- | ----------- | ------------ | ------------------- |
-| Gemma 4 26B A4B               | \~30        | 22 GB        | ⭐⭐⭐⭐⭐          |
+| Gemma 4 26B A4B               | \~29        | 22 GB        | ⭐⭐⭐⭐⭐          |
 | Qwen 3.5 9B                   | \~15        | Moderate     | ⭐⭐⭐⭐☆          |
 | Qwen 3 14B                    | \~10        | High         | ⭐⭐⭐☆☆          |
 | Gemma 4 12B                   | \~11        | Moderate     | ⭐⭐⭐☆☆          |
@@ -51,6 +54,7 @@ Reported memory usage refers to total system memory consumption, including backg
 | Qwen 3.6 27B                  | \~5         | 22 GB        | ⭐⭐☆☆☆          |
 | Prism Bonsai 27B              | \~6 to ~10 | 17GB to 19GB | ⭐⭐⭐☆☆          |
 | Qwen 3 Coder 30B A3B Instruct | \~37        | 21GB         | ⭐⭐⭐⭐⭐          |
+| Qwen 3.6 35B A3B Instruct     | ~27         | 22.5 GB      | ⭐⭐⭐⭐⭐          |
 
 # LLM Models
 
@@ -77,6 +81,8 @@ All those models were sourced from Unsloth.ai, except for a few.
   - Bonsai-27B-Q1_0.gguf [Link](https://huggingface.co/prism-ml/Bonsai-27B-gguf/blob/main/Bonsai-27B-Q1_0.gguf)
 - Qwen 3 Coder 30B A3B Instruct
   - Qwen3-Coder-30B-A3B-Instruct-UD-IQ2_XXS.gguf [Link](https://huggingface.co/unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF/blob/main/Qwen3-Coder-30B-A3B-Instruct-UD-IQ2_XXS.gguf)
+- Qwen 3.6 35B A3B
+  - Qwen3.6-35B-A3B-UD-IQ2\_XXS.gguf [Link](https://huggingface.co/unsloth/Qwen3.6-35B-A3B-GGUF/blob/main/Qwen3.6-35B-A3B-UD-IQ2_XXS.gguf)
 
 ## Prompts Used
 
@@ -613,6 +619,34 @@ Prompt 3: Output 324 tokens 38.02 t/s
 
 I was happily surprised by the speed and the limited amount of tokens. I ran it a few times to be sure, so this is not a cherry pick and no, it is very consistent. For a chat, it has very low latency and feels very snappy in its answers, providing a very good user experience. When the context grows to 16K/20K tokens, the token throughput decreases from 20 tok/s down to 15 tok/s. Still, it retains its low latency to answer quickly.
 
+## Qwen 3.6 35B A3B
+
+It is the successor of the Qwen 3 30B A3B model and it does not disappoint. It takes a bit more memory 1GB, and it is a bit less snappier with 30 tok/s and less after.
+
+````bash
+llama-b9940/llama-server \
+-m ../Qwen3.6-35B-A3B-UD-IQ2_XXS.gguf \
+-ngl 99 \
+--ctx-size 32768 \
+--temp 0.7 --min-p 0.0 --top-p 0.80 --top-k 20 \
+--repeat-penalty 1.00 --presence-penalty 1.5 \
+--chat-template-kwargs '{"enable_thinking":false}' \
+-fa on \
+--cache-type-k q4_0 \
+--cache-type-v q4_0 \
+-np 1 \
+--port 8080
+
+````
+
+Prompt 1: Output 618 tokens 30.68 t/s
+
+Prompt 2: Output 869 tokens 29.91 t/s
+
+Prompt 3: Output 877 tokens 29.34 t/s
+
+With respect to the previous Qwen 3 Code it has more verbosity in the answer. I needs about 1 GB more in memory for the same context. To check if it is still usable and how snappier it is. It is probably one of the best local model you can run.
+
 # Sustained Performance
 
 The MacBook Air is fanless, so sustained workloads behave differently from actively cooled systems:
@@ -631,6 +665,7 @@ The MacBook Air is fanless, so sustained workloads behave differently from activ
 * LFM 8B A1B demonstrates how efficient Mixture-of-Experts models can be on Apple Silicon.
 * Prism Bonsai 27B fits well in the memory but the memory bandwidth requirement makes it not useful in practice with about 10 to 6 tok/s.
 * Qwen 3 Coder 30B A3B provided the snappier low-latency responsiveness, the answers are short, enabling higher context density, and very good balance on the perceived capability in those tests.
+* Qwen 3.6 35 A3B is very good too, less snappier than the Qwen 3 Coder, probably better than Gemma 4 26B A4B, but details of what you do matters more. A bit more memory usage.
 * KV cache quantization reduces memory usage by 2–3 GB but decreases throughput in these tests.
 * On Apple Silicon, MoE models change the usual relationship between model size and speed. A 30B MoE model can outperform smaller dense models because only a fraction of parameters are active during generation.
 * A fanless 24 GB M4 MacBook Air can realistically run surprisingly large MoE models, while dense models above ~14B become bandwidth- and memory-limited.
@@ -649,3 +684,7 @@ These results should be viewed as practical guidance rather than absolute rankin
 18/07/2026:
 
 * Add Qwen 3 Coder 30B A3B Instruct
+
+19/07/2026:
+
+- Add Qwen 3.6 35B A3B (parameters set to Instruct mode)
