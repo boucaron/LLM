@@ -624,12 +624,13 @@ The MacBook Air is fanless, so sustained workloads behave differently from activ
 
 # Conclusions
 
-* Gemma 4 26B A4B provided the best overall balance of responsiveness, memory usage, and perceived capability in these tests.
+* Gemma 4 26B A4B provided a very good overall balance of responsiveness, memory usage, and perceived capability in these tests.
 * Qwen 3 14B offers stronger dense-model behavior but at roughly one-third the throughput.
 * Qwen 3.6 27B fits in memory with some KV cache optimization but too slow to be usable.
 * Qwen 3.5 9B provides an excellent balance between capability and speed.
 * LFM 8B A1B demonstrates how efficient Mixture-of-Experts models can be on Apple Silicon.
 * Prism Bonsai 27B fits well in the memory but the memory bandwidth requirement makes it not useful in practice with about 10 to 6 tok/s.
+* Qwen 3 Coder 30B A3B provided the snappier low-latency responsiveness, the answers are short, enabling higher context density, and very good balance on the perceived capability in those tests.
 * KV cache quantization reduces memory usage by 2–3 GB but decreases throughput in these tests.
 * On Apple Silicon, MoE models change the usual relationship between model size and speed. A 30B MoE model can outperform smaller dense models because only a fraction of parameters are active during generation.
 * A fanless 24 GB M4 MacBook Air can realistically run surprisingly large MoE models, while dense models above ~14B become bandwidth- and memory-limited.
