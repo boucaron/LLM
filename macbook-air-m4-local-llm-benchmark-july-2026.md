@@ -611,7 +611,7 @@ Prompt 2: Output 341 tokens 39.26 t/s
 
 Prompt 3: Output 324 tokens 38.02 t/s
 
-I was happily surprised by the speed and the limited amount of tokens. I run it a few times to be sure, this is not a cherry pick and no it is very consistent.
+I was happily surprised by the speed and the limited amount of tokens. I ran it a few times to be sure, so this is not a cherry pick and no, it is very consistent. For a chat, it has very low latency and feels very snappy in its answers, providing a very good user experience. When the context grows to 16K/20K tokens, the token throughput decreases from 20 tok/s down to 15 tok/s. Still, it retains its low latency to answer quickly.
 
 # Sustained Performance
 
