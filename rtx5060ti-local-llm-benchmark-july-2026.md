@@ -38,8 +38,7 @@ The CPU was configured with a conservative power limit of approximately 75 W pea
 
 # Executive Summary
 
-Overall the RTX 5060 Ti exceeded my expectations. Every tested model fit comfortably within 16 GB of VRAM using aggressive quantisation, and most sparse models delivered between 75 and 100 tokens/s. Even larger reasoning-oriented models remained responsive enough for interactive use.
-
+Overall the RTX 5060 Ti exceeded my expectations. Every tested model fit comfortably within 16 GB of VRAM using aggressive quantisation, and most sparse models delivered between 75 and 90 tokens/s without MTP. Even larger reasoning-oriented models remained responsive enough for interactive use.
 
 
 | Model                         | Avg tok/s | VRAM    | Practical on 16 GB? |
@@ -48,6 +47,19 @@ Overall the RTX 5060 Ti exceeded my expectations. Every tested model fit comfort
 | Qwen 3.6 27B                  | \~30      | 10.4 GB | ⭐⭐⭐☆☆           |
 | Qwen 3 Coder 30B A3B Instruct | \~75      | 11.5 GB | ⭐⭐⭐⭐⭐           |
 | Qwen 3.6 35B A3B Instruct     | \~80      | 11.2 GB | ⭐⭐⭐⭐⭐           |
+
+## MTP
+
+The RTX 5060 TI responds well to MTP with 2 ways.
+
+There is at least 40% throughput increase on Qwen 3.6 27B Dense and Qwen 3.6 35B A3B, it is a major improvement:
+
+- For the dense 27B the user experience is moving from experiments to the low confort zone.
+- For the sparse 35B the throughput is such that agentic job is possible locally.
+
+The MTP throughput increase is good enough, to start to thing about tuning the model to improve 'knowledge' with less quantification, or having more 'precision' in the KV cache.
+
+I hope we will see also more smaller dense models with MTP.
 
 # Tested Models
 
@@ -65,6 +77,9 @@ Unless otherwise noted, all GGUF models were downloaded from Unsloth.ai.
 * Qwen 3.6 35B A3B
 
   * Qwen3.6-35B-A3B-UD-IQ2\_XXS.gguf [Link](https://huggingface.co/unsloth/Qwen3.6-35B-A3B-GGUF/blob/main/Qwen3.6-35B-A3B-UD-IQ2_XXS.gguf)
+* Qwen 3.6 27B MTP (same filename - small difference in the context)
+
+  * Qwen3.6-27B-UD-IQ2_XXS.gguf [Link](https://huggingface.co/unsloth/Qwen3.6-27B-MTP-GGUF?show_file_info=Qwen3.6-27B-UD-IQ2_XXS.gguf)
 
 ## Prompts Used
 
@@ -103,7 +118,6 @@ Prompt 3: Output 661 tokens 6.5s 101.35 t/s
 
 VRAM used: 10.9 GB
 
-
 ### 4-bit KV Cache, FA On, Parallel Seq 1
 
 ````bash
@@ -130,7 +144,6 @@ VRAM used: 10.7 GB
 
 Gemma 4 A4B was the fastest model tested, consistently exceeding 100 tokens/s while remaining below 11 GB of VRAM. Subjectively, it felt effectively instantaneous during interactive use.
 
-
 ## Qwen 3.6 27B
 
 ```bash
@@ -149,8 +162,6 @@ llama-server.exe
      -ngl 99
 ```
 
-
-
 Prompt 1: Output 542 tokens 15s 34.56 t/s
 
 Prompt 2: Output 822 tokens 23s 34.41 t/s
@@ -163,6 +174,19 @@ VRAM used: 10.4 GB
 
 Despite being significantly slower than the sparse models, it still delivers a comfortable interactive experience for reasoning tasks. For comparison, the same benchmark achieved only about 4–6 tokens/s on the MacBook Air M4.
 
+### MTP Variant
+
+Prompt 1: Output 586 tokens 12s 47.42 t/s
+
+Prompt 2: Output 864 tokens 17s 50.10 t/s
+
+Prompt 3: Output 876 tokens 17s 49.32t/s
+
+VRAM used: 11.0 GB
+
+#### Observations
+
+It is an interesting boost in performances, about 40% more in throughput. This is still an important improvement from a user experience point of view. Best results were with 2 way MTP, above it does not bring more throughput.
 
 ## Qwen 3 Coder 30B A3B Instruct
 
@@ -182,7 +206,6 @@ llama-server.exe
 --cache-type-v q4_0
 -np 1
 ```
-
 
 Prompt 1: Output 264 tokens 3.1s 83.84 t/s
 
@@ -211,7 +234,6 @@ llama-server
 
 ```
 
-
 Prompt 1: Output 495 tokens 5.5s 90.08 t/s
 
 Prompt 2: Output 1224 tokens 14s 82.96 t/s
@@ -220,15 +242,31 @@ Prompt 3: Output 685 tokens 8.1s 84.46 t/s
 
 VRAM used: 11.2 GB
 
+### Observations
+
 This model offers an excellent compromise between reasoning capability and generation speed. Despite its larger size, it consistently maintained over 80 tokens/s while remaining comfortably within the 16 GB VRAM budget.
+
+### MTP Variant
+
+Prompt 1: Output 729 tokens 5.6s 130.87 t/s
+
+Prompt 2: Output 721 tokens 5.1s 142.11 t/s
+
+Prompt 3: Output 778 tokens 5.7s  137.68 t/s
+
+VRAM used: 12.5 GB
+
+#### Observations
+
+It is a big improvement in throughput, without the MTP it is already very fast. There is a good 1 GB increase due to the 2 ways MTP. About 40 to 60 % throughput increase, this is big. No further improvement in throughput above 2 ways.
 
 # Conclusions
 
-The RTX 5060 Ti 16 GB proved to be an excellent entry point for local LLM inference. Sparse models in the 25–35B class now run at speeds that make interactive usage genuinely comfortable.
+The RTX 5060 Ti 16 GB proved to be an excellent entry point for local LLM inference. Sparse models in the 25–35B class now run at speeds that make interactive usage genuinely comfortable (slightly above 50 tokens/s), to super comfortable when the MTP is enabled.
 
 Compared with the MacBook Air M4, generation throughput improved by roughly three to five times depending on the model, which fundamentally changes the user experience. Instead of waiting for responses, local agents become practical for everyday work.
 
-Perhaps the biggest surprise was that even the Qwen 3.6 27B reasoning model remained usable at around 34 tokens/s. While not as fast as the sparse A3B models, it is responsive enough that reasoning no longer feels like a bottleneck.
+Perhaps the biggest surprise was that even the Qwen 3.6 27B reasoning model remained usable at around 34 tokens/s and with MTP around 45 tokens/s. While not as fast as the sparse A3B models, it is responsive enough that reasoning no longer feels like a bottleneck.
 
 Overall, these results suggest that 16 GB GPUs have become a practical sweet spot for local inference. A single mid-range consumer GPU is now sufficient to run several state-of-the-art sparse models at highly interactive speeds.
 
@@ -237,3 +275,7 @@ Overall, these results suggest that 16 GB GPUs have become a practical sweet spo
 27/07/2026:
 
 - Initial test
+
+28/07/2026:
+
+- MTP Tests
