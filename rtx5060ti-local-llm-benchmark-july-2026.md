@@ -47,6 +47,9 @@ Overall the RTX 5060 Ti exceeded my expectations. Every tested model fit comfort
 | Qwen 3.6 27B                  | \~30      | 10.4 GB | ⭐⭐⭐☆☆           |
 | Qwen 3 Coder 30B A3B Instruct | \~75      | 11.5 GB | ⭐⭐⭐⭐⭐           |
 | Qwen 3.6 35B A3B Instruct     | \~80      | 11.2 GB | ⭐⭐⭐⭐⭐           |
+| Qwen 3.6 27B MTP              | \~45      | 11.0 GB | ⭐⭐⭐⭐☆           |
+| Qwen 3.6 35B A3B Instruct MTP | \~120     | 12.5 GB | ⭐⭐⭐⭐⭐           |
+| Ornith 1.0 35B                | \~90      | 11.8 GB | ⭐⭐⭐⭐⭐           |
 
 ## MTP
 
@@ -80,6 +83,9 @@ Unless otherwise noted, all GGUF models were downloaded from Unsloth.ai.
 * Qwen 3.6 27B MTP (same filename - small difference in the context)
 
   * Qwen3.6-27B-UD-IQ2_XXS.gguf [Link](https://huggingface.co/unsloth/Qwen3.6-27B-MTP-GGUF?show_file_info=Qwen3.6-27B-UD-IQ2_XXS.gguf)
+* Ornith-1.0-35B
+
+  * Ornith-1.0-35B-UD-IQ2\_XXS.gguf [Link](https://huggingface.co/unsloth/Ornith-1.0-35B-GGUF?show_file_info=Ornith-1.0-35B-UD-IQ2_XXS.gguf)
 
 ## Prompts Used
 
@@ -260,6 +266,27 @@ VRAM used: 12.5 GB
 
 It is a big improvement in throughput, without the MTP it is already very fast. There is a good 1 GB increase due to the 2 ways MTP. About 40 to 60 % throughput increase, this is big. No further improvement in throughput above 2 ways.
 
+## Ornith 1.0 35B
+
+```bash
+llama-server.exe 
+-m ..\Ornith-1.0-35B-UD-IQ2_XXS.gguf 
+--ctx-size 32768 
+--temp 0.7 --top-p 0.80 --top-k 20 
+--min-p 0.00 --repeat-penalty 1.00 --presence-penalty 1.5  
+--chat-template-kwargs "{\"enable_thinking\":false}" 
+-fa on -np 1 
+--cache-type-k q4_0 --cache-type-v q4_0
+```
+
+Prompt 1: Output 698 tokens 6.7s 104.83 t/s
+
+Prompt 2: Output 796 tokens 7.7s 103.90 t/s
+
+Prompt 3: Output 856 tokens 8.3s  103.38 t/s
+
+VRAM used: 11.8 GB
+
 # Conclusions
 
 The RTX 5060 Ti 16 GB proved to be an excellent entry point for local LLM inference. Sparse models in the 25–35B class now run at speeds that make interactive usage genuinely comfortable (slightly above 50 tokens/s), to super comfortable when the MTP is enabled.
@@ -279,3 +306,7 @@ Overall, these results suggest that 16 GB GPUs have become a practical sweet spo
 28/07/2026:
 
 - MTP Tests
+
+30/07/2025:
+
+- Add Ornith-1.0-35B
