@@ -1,6 +1,6 @@
 # Practical Local LLM Performance on a MacBook Air M4 (July 2026)
 
-Tests conducted in July 2026.
+Tests conducted in July/August 2026.
 
 This report is not intended to compare model quality or reasoning ability. The goal is to evaluate which GGUF models are practically usable on a MacBook Air M4 with 24 GB of unified memory, focusing on inference speed, memory usage, and overall user experience.
 
@@ -23,7 +23,7 @@ Note that Apple Silicon uses unified memory shared between CPU and GPU, so the r
 ## Setup
 
 - MacBook Air M4 24 GB
-- macOS Tahoe 26.5.2
+- macOS Tahoe 26.5.2 then Tahoo 26.6
 - llama.cpp b8833 (later tested with llama-b9940 - no regression)
 - prism llama.cpp b9581 (for Prism Bonsai 27B)
 
@@ -39,6 +39,8 @@ After testing several recent GGUF models on a MacBook Air M4 (24 GB), I found th
 * **Prism Bonsai 27B** fits comfortably within memory limits, but it is too slow to be usable with about 10 to 6 tok/s.
 * **Qwen 3 Coder 30B A3B Instruct** was one of the fastest large models tested, combining high throughput (~37 tok/s) with strong coding-oriented behavior and low verbosity.
 * **Qwen 3.6 35B A3B** (set in instruct mode) is very fast too, it has a bit more knowledge than Qwen 3 Coder or Gemma 4 26B, and it delivers about 27 tok/s despite being the biggest. Its output is a bit more verbose than Qwen 3 Coder.
+* **GLM 4.7 Flash** is fast, but I noticed that the throughput goes down quickly. It seems to have a bit less knowledge than the Qwen 3.6 35B A3B, still it provides some interesting outputs too.
+* **Ornith 1.0 9B** provides an improvement on Qwen 3.5 9B.
 * Quantized KV cache saves 2–3 GB of memory but slightly reduced throughput in these tests.
 
 Reported memory usage refers to total system memory consumption, including background applications such as VS Code, Terminal, Google Chrome (with a few tabs), and Safari.
@@ -55,6 +57,8 @@ Reported memory usage refers to total system memory consumption, including backg
 | Prism Bonsai 27B              | \~6 to ~10 | 17GB to 19GB | ⭐⭐⭐☆☆          |
 | Qwen 3 Coder 30B A3B Instruct | \~37        | 21GB         | ⭐⭐⭐⭐⭐          |
 | Qwen 3.6 35B A3B Instruct     | ~27         | 22.5 GB      | ⭐⭐⭐⭐⭐          |
+| GLM 4.7 Flash.                | \~24        | 21.5 GB      | ⭐⭐⭐⭐☆ |
+| Ornith 1.0 9B                 | \~15        | 17 GB        | ⭐⭐⭐⭐☆ | 
 
 # LLM Models
 
@@ -83,6 +87,10 @@ All those models were sourced from Unsloth.ai, except for a few.
   - Qwen3-Coder-30B-A3B-Instruct-UD-IQ2_XXS.gguf [Link](https://huggingface.co/unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF/blob/main/Qwen3-Coder-30B-A3B-Instruct-UD-IQ2_XXS.gguf)
 - Qwen 3.6 35B A3B
   - Qwen3.6-35B-A3B-UD-IQ2\_XXS.gguf [Link](https://huggingface.co/unsloth/Qwen3.6-35B-A3B-GGUF/blob/main/Qwen3.6-35B-A3B-UD-IQ2_XXS.gguf)
+- GLM 4.7 Flash
+  - GLM-4.7-Flash-UD-IQ2\_XXS.gguf [Link](https://huggingface.co/unsloth/GLM-4.7-Flash-GGUF?show_file_info=GLM-4.7-Flash-UD-IQ2_XXS.gguf)
+- Ornith 1.0 9B
+  - Ornith-1.0-9B-Q4\_K\_M.gguf [Link](https://huggingface.co/unsloth/Ornith-1.0-9B-GGUF?show_file_info=Ornith-1.0-9B-Q4_K_M.gguf)
 
 ## Prompts Used
 
@@ -647,6 +655,95 @@ Prompt 3: Output 877 tokens 29.34 t/s
 
 With respect to the previous Qwen 3 Code it has more verbosity in the answer. I needs about 1 GB more in memory for the same context. To check if it is still usable and how snappier it is. It is probably one of the best local model you can run.
 
+## GLM 4.7 Flash
+
+Another MOE with 30B parameters.
+
+```bash
+llama-b9940/llama-server \
+-m ../GLM-4.7-Flash-UD-IQ2_XXS.gguf \
+-ngl 99 \
+--ctx-size 32768 \
+--temp 1.0 --top-p 0.95 \
+--repeat-penalty 1.00 \
+-fa on \
+--cache-type-k q4_0 \
+--cache-type-v q4_0 \
+-np 1 \
+--port 8080
+```
+
+Prompt 1: Output 549 tokens 27.34 t/s
+
+Prompt 2: Output 810 tokens  23.83 t/s
+
+Prompt 3: Output 646 tokens 20.50 t/s
+
+### Observations
+
+The throughput goes down quickly despite no thermal thottling.
+
+## Ornith 1 9B
+
+I am interested in this small 9B model variant based on Qwen 3.5 due to its scores in benchmark for agentic tasks such as calls for terminal tools and so on.
+
+```bash
+llama-server \ 
+ -m ../Ornith-1.0-9B-Q4_K_M.gguf \
+-ngl 99 --ctx-size 32768 \
+--temp 0.6 --top-p 0.95 --top-k 20 \
+--chat-template-kwargs '{"enable_thinking":false}' \
+-fa on -np 1 \
+--port 8080
+```
+
+Prompt 1: Output 626  tokens 16.92 t/s
+
+Prompt 2: Output 1326 tokens  16.64 t/s
+
+Prompt 3: Output 667 tokens 15.83 t/s
+
+### MTP Variant
+
+[Link](https://huggingface.co/protoLabsAI/Ornith-1.0-9B-MTP-GGUF?show_file_info=Ornith-1.0-9B-MTP-Q4_K_M.gguf)
+
+llama-server \ 
+-m ../Ornith-1.0-9B-MTP-Q4_K_M.gguf \
+-ngl 99 \
+--ctx-size 32768 \
+--temp 0.6 --top-p 0.95 --top-k 20 \
+--chat-template-kwargs '{\"enable_thinking\":false}' \
+--jinja \
+--spec-type draft-mtp --spec-draft-n-max 1 \
+-fa on \
+-np 1 \
+Prompt 1: Output 368  tokens 18.03 t/s
+
+Prompt 2: Output 807 tokens  17.82 t/s
+
+Prompt 3: Output 694 tokens 15.39 t/s
+
+I had the best result with 1, I will try on another hardware to check, for the small M4 no real change.
+
+### Variant with 4bit quant on KV cache
+
+```bash
+llama-server \ 
+ -m ../Ornith-1.0-9B-Q4_K_M.gguf \
+-ngl 99 --ctx-size 32768 \
+--temp 0.6 --top-p 0.95 --top-k 20 \
+--chat-template-kwargs '{"enable_thinking":false}' \
+--cache-type-k q4_0 \
+--cache-type-v q4_0 \
+-fa on -np 1 \
+--port 8080
+```
+Prompt 1: Output 478  tokens 16.86 t/s
+
+Prompt 2: Output 1068 tokens  16.48 t/s
+
+Prompt 3: Output 765 tokens 14.64 t/s
+
 # Sustained Performance
 
 The MacBook Air is fanless, so sustained workloads behave differently from actively cooled systems:
@@ -666,6 +763,8 @@ The MacBook Air is fanless, so sustained workloads behave differently from activ
 * Prism Bonsai 27B fits well in the memory but the memory bandwidth requirement makes it not useful in practice with about 10 to 6 tok/s.
 * Qwen 3 Coder 30B A3B provided the snappier low-latency responsiveness, the answers are short, enabling higher context density, and very good balance on the perceived capability in those tests.
 * Qwen 3.6 35 A3B is very good too, less snappier than the Qwen 3 Coder, probably better than Gemma 4 26B A4B, but details of what you do matters more. A bit more memory usage.
+* GLM 4.7 Flash, it is providing some interresting answers, but I noticed an issue on the token throughput that degrades quickly. May be an issue on my setup.
+* Ornith 1.0 9B is an evolution of Qwen 3.5 9B, it provides too an excellent balance between capability and speed, with improvements for agentic workloads.
 * KV cache quantization reduces memory usage by 2–3 GB but decreases throughput in these tests.
 * On Apple Silicon, MoE models change the usual relationship between model size and speed. A 30B MoE model can outperform smaller dense models because only a fraction of parameters are active during generation.
 * A fanless 24 GB M4 MacBook Air can realistically run surprisingly large MoE models, while dense models above ~14B become bandwidth- and memory-limited.
@@ -688,3 +787,11 @@ These results should be viewed as practical guidance rather than absolute rankin
 19/07/2026:
 
 - Add Qwen 3.6 35B A3B (parameters set to Instruct mode)
+
+31/07/2026:
+
+- Add GLM-4.7-Flash
+
+01/08/2026
+
+- Add Ornith 1.0 9B
