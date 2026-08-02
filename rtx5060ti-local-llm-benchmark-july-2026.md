@@ -53,6 +53,7 @@ Overall the RTX 5060 Ti exceeded my expectations. Every tested model fit comfort
 | Ornith 1.0 9B                 | \~60      | 6.8 GB  | ⭐⭐⭐⭐☆           |
 | Ornith 1.0 9B MTP             | \~80      | 7.4 GB  | ⭐⭐⭐⭐⭐           |
 | KAT-Coder-V2.5-Dev            | \~80      | 10.5 GB | ⭐⭐⭐⭐⭐           |
+| Qwythos-9B-Claude-Mythos-5-1M MTP |  \~80 | 7.7 GB  | ⭐⭐⭐⭐⭐           |
 
 ## MTP
 
@@ -95,6 +96,9 @@ Unless otherwise noted, all GGUF models were downloaded from Unsloth.ai.
 * KAT-Coder-V2.5-Dev
 
   * bartowski provided model: Kwaipilot\_KAT-Coder-V2.5-Dev-IQ2\_XXS.gguf [Link](https://huggingface.co/bartowski/Kwaipilot_KAT-Coder-V2.5-Dev-GGUF?show_file_info=Kwaipilot_KAT-Coder-V2.5-Dev-IQ2_XXS.gguf)
+* Qwythos-9B-Claude-Mythos-5-1M
+
+  * empero-ai provided model: Qwythos-9B-Claude-Mythos-5-1M-MTP-Q4_K_M.gguf  [Link](https://huggingface.co/empero-ai/Qwythos-9B-Claude-Mythos-5-1M-GGUF?show_file_info=Qwythos-9B-Claude-Mythos-5-1M-MTP-Q4_K_M.gguf)
 
 ## Prompts Used
 
@@ -378,6 +382,54 @@ Prompt 3: Output 430 tokens 4.4 s  97.85 t/s
 
 VRAM used:  10.5 GB
 
+## Qwythos-9B-Claude-Mythos-5-1M
+
+This is a variant of Qwen 3.5 post trained on an uncensored model.
+
+Qwythos-9B-Claude-Mythos-5-1M-MTP-Q4_K_M [Link](https://huggingface.co/empero-ai/Qwythos-9B-Claude-Mythos-5-1M-GGUF?show_file_info=Qwythos-9B-Claude-Mythos-5-1M-MTP-Q4_K_M.gguf)
+
+```bash
+llama-server.exe 
+-m ..\Qwythos-9B-Claude-Mythos-5-1M-MTP-Q4_K_Mgguf 
+--ctx-size 32768 
+--temp 0.6 --top-p 0.95 --top-k 20 
+--repeat-penalty 1.05
+--chat-template-kwargs "{\"enable_thinking\":false}" 
+-fa on -np 1 
+--spec-type draft-mtp --spec-draft-n-max 1
+```
+
+
+Prompt 1: Output 132 tokens 1.6 s 83.36 t/s
+
+Prompt 2: Output 280 tokens 3.4 s 83.12 t/s
+
+Prompt 3: Output 280 tokens 3.4 s  81.48 t/s
+
+VRAM used:  7.5 GB
+
+### Variant MTP 2
+
+```bash
+llama-server.exe 
+-m ..\Qwythos-9B-Claude-Mythos-5-1M-MTP-Q4_K_Mgguf 
+--ctx-size 32768 
+--temp 0.6 --top-p 0.95 --top-k 20 
+--repeat-penalty 1.05
+--chat-template-kwargs "{\"enable_thinking\":false}" 
+-fa on -np 1 
+--spec-type draft-mtp --spec-draft-n-max 2
+```
+
+Prompt 1: Output 182 tokens 1.6 s 75.30 t/s
+
+Prompt 2: Output 473 tokens 5.6 s 83.79 t/s
+
+Prompt 3: Output 319 tokens 4.0 s  80.51 t/s
+
+VRAM used:  7.6 GB
+
+
 # Conclusions
 
 The RTX 5060 Ti 16 GB proved to be an excellent entry point for local LLM inference. Sparse models in the 25–35B class now run at speeds that make interactive usage genuinely comfortable (slightly above 50 tokens/s), to super comfortable when the MTP is enabled.
@@ -410,3 +462,4 @@ Overall, these results suggest that 16 GB GPUs have become a practical sweet spo
 
 - Add Ornith-1.0-9B MTP Variants
 - Add Kwaipilot_KAT-Coder-V2.5-Dev
+- Add Qwythos-9B-Claude-Mythos-5-1M
