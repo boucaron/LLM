@@ -1,6 +1,6 @@
-# Practical Local LLM Performance on an RTX 5060 Ti 16GB
+Practical Local LLM Performance on an RTX 5060 Ti 16GB
 
-Tests conducted in July 2026.
+Tests conducted in July/August 2026.
 
 Following my earlier experiments on the MacBook Air M4, I finally decided to add a dedicated GPU to my workstation.
 
@@ -50,6 +50,8 @@ Overall the RTX 5060 Ti exceeded my expectations. Every tested model fit comfort
 | Qwen 3.6 27B MTP              | \~45      | 11.0 GB | ⭐⭐⭐⭐☆           |
 | Qwen 3.6 35B A3B Instruct MTP | \~120     | 12.5 GB | ⭐⭐⭐⭐⭐           |
 | Ornith 1.0 35B                | \~90      | 11.8 GB | ⭐⭐⭐⭐⭐           |
+| Ornith 1.0 9B                 | \~60      |  6.8 GB | ⭐⭐⭐⭐☆           |
+| Ornith 1.0 9B MTP             | \~80      |  7.4 GB | ⭐⭐⭐⭐⭐           |
 
 ## MTP
 
@@ -86,6 +88,9 @@ Unless otherwise noted, all GGUF models were downloaded from Unsloth.ai.
 * Ornith-1.0-35B
 
   * Ornith-1.0-35B-UD-IQ2\_XXS.gguf [Link](https://huggingface.co/unsloth/Ornith-1.0-35B-GGUF?show_file_info=Ornith-1.0-35B-UD-IQ2_XXS.gguf)
+* Ornith-1.0-9B
+
+  * Ornith-1.0-9B-Q4_K_M.gguf [Link](https://huggingface.co/unsloth/Ornith-1.0-9B-GGUF?show_file_info=Ornith-1.0-9B-Q4_K_M.gguf)
 
 ## Prompts Used
 
@@ -287,6 +292,68 @@ Prompt 3: Output 856 tokens 8.3s  103.38 t/s
 
 VRAM used: 11.8 GB
 
+## Ornith 1.0 9B
+
+I am interested in this smaller model in the case an agent runs some cmd lines for instance. It is not really for coding, even it is a nice model. A K4_M variant is used, memory size is not an issue.
+
+```bash
+llama-server.exe 
+-m ..\Ornith-1.0-9B-Q4_K_M.gguf 
+--ctx-size 32768 
+--temp 0.6 --top-p 0.95 --top-k 20 
+--chat-template-kwargs "{\"enable_thinking\":false}" 
+-fa on -np 1 
+```
+
+Prompt 1: Output 433 tokens 6.2s 69.39 t/s
+
+Prompt 2: Output 1081 tokens 15s 68.75 t/s
+
+Prompt 3: Output 775 tokens 11s  68.30 t/s
+
+VRAM used: 6.8 GB
+
+
+### MTP Variant
+
+The variant used is provided by protoLabsAI [Link](https://huggingface.co/protoLabsAI/Ornith-1.0-9B-MTP-GGUF?show_file_info=Ornith-1.0-9B-MTP-Q4_K_M.gguf)
+
+```bash
+llama-server.exe 
+-m ..\Ornith-1.0-9B-MTP-Q4_K_M.gguf 
+--ctx-size 32768 
+--temp 0.6 --top-p 0.95 --top-k 20 
+--chat-template-kwargs "{\"enable_thinking\":false}" 
+-fa on -np 1 
+--spec-type draft-mtp --spec-draft-n-max 1
+```
+
+Prompt 1: Output 430 tokens 5.2 s 82.69 t/s
+
+Prompt 2: Output 421 tokens 4.7 s 89.09 t/s
+
+Prompt 3: Output 268 tokens 3.2 s  84.16 t/s
+
+VRAM used:  7.3 GB
+
+Good improvement on the throughput and the answers are short.
+
+#### Second run with --spec-draft-n-max 2
+
+
+Prompt 1: Output 571 tokens 6.6 s 86.66 t/s
+
+Prompt 2: Output 1196 tokens 12 s 98.78 t/s
+
+Prompt 3: Output 801 tokens 8.9 s  89.79 t/s
+
+VRAM used:  7.4 GB
+
+An another small improvement on the throughput, the answers are a bit longer.
+
+*NB*: I tried above 2 and there is a diminishing return. So 2 seems to be the best candidate
+
+
 # Conclusions
 
 The RTX 5060 Ti 16 GB proved to be an excellent entry point for local LLM inference. Sparse models in the 25–35B class now run at speeds that make interactive usage genuinely comfortable (slightly above 50 tokens/s), to super comfortable when the MTP is enabled.
@@ -307,6 +374,14 @@ Overall, these results suggest that 16 GB GPUs have become a practical sweet spo
 
 - MTP Tests
 
-30/07/2025:
+30/07/2026:
 
 - Add Ornith-1.0-35B
+
+01/08/2026:
+
+- Add Ornith-1.0-9B
+
+02/08/2026:
+
+- Add Ornith-1.0-9B MTP Variant
