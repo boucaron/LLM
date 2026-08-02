@@ -1,4 +1,4 @@
-Practical Local LLM Performance on an RTX 5060 Ti 16GB
+# Practical Local LLM Performance on an RTX 5060 Ti 16GB
 
 Tests conducted in July/August 2026.
 
@@ -50,8 +50,9 @@ Overall the RTX 5060 Ti exceeded my expectations. Every tested model fit comfort
 | Qwen 3.6 27B MTP              | \~45      | 11.0 GB | ⭐⭐⭐⭐☆           |
 | Qwen 3.6 35B A3B Instruct MTP | \~120     | 12.5 GB | ⭐⭐⭐⭐⭐           |
 | Ornith 1.0 35B                | \~90      | 11.8 GB | ⭐⭐⭐⭐⭐           |
-| Ornith 1.0 9B                 | \~60      |  6.8 GB | ⭐⭐⭐⭐☆           |
-| Ornith 1.0 9B MTP             | \~80      |  7.4 GB | ⭐⭐⭐⭐⭐           |
+| Ornith 1.0 9B                 | \~60      | 6.8 GB  | ⭐⭐⭐⭐☆           |
+| Ornith 1.0 9B MTP             | \~80      | 7.4 GB  | ⭐⭐⭐⭐⭐           |
+| KAT-Coder-V2.5-Dev            | \~80      | 10.5 GB | ⭐⭐⭐⭐⭐           |
 
 ## MTP
 
@@ -91,6 +92,9 @@ Unless otherwise noted, all GGUF models were downloaded from Unsloth.ai.
 * Ornith-1.0-9B
 
   * Ornith-1.0-9B-Q4_K_M.gguf [Link](https://huggingface.co/unsloth/Ornith-1.0-9B-GGUF?show_file_info=Ornith-1.0-9B-Q4_K_M.gguf)
+* KAT-Coder-V2.5-Dev
+
+  * bartowski provided model: Kwaipilot\_KAT-Coder-V2.5-Dev-IQ2\_XXS.gguf [Link](https://huggingface.co/bartowski/Kwaipilot_KAT-Coder-V2.5-Dev-GGUF?show_file_info=Kwaipilot_KAT-Coder-V2.5-Dev-IQ2_XXS.gguf)
 
 ## Prompts Used
 
@@ -313,7 +317,6 @@ Prompt 3: Output 775 tokens 11s  68.30 t/s
 
 VRAM used: 6.8 GB
 
-
 ### MTP Variant
 
 The variant used is provided by protoLabsAI [Link](https://huggingface.co/protoLabsAI/Ornith-1.0-9B-MTP-GGUF?show_file_info=Ornith-1.0-9B-MTP-Q4_K_M.gguf)
@@ -340,7 +343,6 @@ Good improvement on the throughput and the answers are short.
 
 #### Second run with --spec-draft-n-max 2
 
-
 Prompt 1: Output 571 tokens 6.6 s 86.66 t/s
 
 Prompt 2: Output 1196 tokens 12 s 98.78 t/s
@@ -351,8 +353,30 @@ VRAM used:  7.4 GB
 
 An another small improvement on the throughput, the answers are a bit longer.
 
-*NB*: I tried above 2 and there is a diminishing return. So 2 seems to be the best candidate
+*NB*: I tried above 2 and there is a diminishing return. So 2 seems to be the best candidate.
 
+## Kwaipilot_KAT-Coder-V2.5-Dev
+
+A Qwen 35B A3B variant with better benchmarks on agentic coding, which is the interesting part where the base model has some weaknesses.
+
+*NB*: The bartowski variant is used, there is no unsloth implementation at the time of this test.
+
+```bash
+llama-server.exe 
+-m ..\Kwaipilot_KAT-Coder-V2.5-Dev-IQ2_XXS.gguf 
+--ctx-size 32768 --temp 0.7 --top-p 0.80 --top-k 20 --min-p 0.00 
+--repeat-penalty 1.00 --presence-penalty 1.5  
+--chat-template-kwargs "{\"enable_thinking\":false}" 
+-fa on -np 1 --cache-type-k q4_0 --cache-type-v q4_0
+```
+
+Prompt 1: Output 349 tokens 4.3 s 81.29 t/s
+
+Prompt 2: Output 609 tokens 7.4 s 82.00 t/s
+
+Prompt 3: Output 430 tokens 4.4 s  97.85 t/s
+
+VRAM used:  10.5 GB
 
 # Conclusions
 
@@ -384,4 +408,5 @@ Overall, these results suggest that 16 GB GPUs have become a practical sweet spo
 
 02/08/2026:
 
-- Add Ornith-1.0-9B MTP Variant
+- Add Ornith-1.0-9B MTP Variants
+- Add Kwaipilot_KAT-Coder-V2.5-Dev
