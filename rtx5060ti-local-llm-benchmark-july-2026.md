@@ -40,7 +40,6 @@ The CPU was configured with a conservative power limit of approximately 75 W pea
 
 Overall, the RTX 5060 Ti exceeded my expectations. Its 16 GB of VRAM was sufficient to run aggressively quantized 25–35B-class MoE models entirely on the GPU at roughly 80–105 tokens/s, with MTP pushing some configurations to around 137 tokens/s. Even higher-quality IQ4_NL variants that exceeded VRAM capacity remained usable through CPU MoE offloading, making larger reasoning-oriented models practical for interactive use.
 
-
 *NB*: Numbers are for **very aggressive 2 bits quantization and KV cache 4 bits quantization**. Except for 9B models using 4 bits quantization and default KV cache quantization.
 
 
@@ -75,27 +74,27 @@ I hope we will see also more smaller dense models with MTP.
 
 The model does not fit entirely in GPU VRAM at this quantization level.
 Offloading works reasonably well for MOE models.
-For this test we are using non MTP and MTP variants with KV cache 4 bits quantization and small 32K tokens : 
-- Qwen3.6-35B-A3B-UD-IQ4_NL_MTP [Link](https://huggingface.co/unsloth/Qwen3.6-35B-A3B-GGUF?show_file_info=Qwen3.6-35B-A3B-UD-IQ4_NL.gguf)
-- Qwen3.6-35B-A3B-UD-IQ4_NL [Link](https://huggingface.co/unsloth/Qwen3.6-35B-A3B-MTP-GGUF?show_file_info=Qwen3.6-35B-A3B-UD-IQ4_NL.gguf)
+For this test we are using non MTP and MTP variants with KV cache 4 bits quantization and small 32K tokens :
+
+- Qwen3.6-35B-A3B-UD-IQ4_NL [Link](https://huggingface.co/unsloth/Qwen3.6-35B-A3B-GGUF?show_file_info=Qwen3.6-35B-A3B-UD-IQ4_NL.gguf)
+- Qwen3.6-35B-A3B-UD-IQ4_NL_MTP [Link](https://huggingface.co/unsloth/Qwen3.6-35B-A3B-MTP-GGUF?show_file_info=Qwen3.6-35B-A3B-UD-IQ4_NL.gguf)
 
 
-| CPU MoE |    VRAM |  MTP 2 Way + KV Q4 |
-| ------: | ------: | ---------------:   |
-|     14  | 13.5 GB | **65–67 tok/s**    |
-|     16  | 12.8 GB | **59–67 tok/s**    |
-|     18  | 12.1 GB | **58–61 tok/s**    |
+| CPU MoE |    VRAM | MTP 2 Way + KV Q4 |
+| ------: | ------: | ----------------: |
+|      14 | 13.5 GB |  **65–67 tok/s** |
+|      16 | 12.8 GB |  **59–67 tok/s** |
+|      18 | 12.1 GB |  **58–61 tok/s** |
 
 
-| CPU MoE |    VRAM |  No MTP + KV Q4  |
+| CPU MoE |    VRAM |   No MTP + KV Q4 |
 | ------: | ------: | ---------------: |
-|      12 | 13.5 GB | **65–66 tok/s**  |
-|      14 | 12.7 GB | **62–63 tok/s**  |
-|      16 | 12.1 GB | **59–60 tok/s**  |
-|      18 | 11.3 GB | **57–59 tok/s**  |
+|      12 | 13.5 GB | **65–66 tok/s** |
+|      14 | 12.7 GB | **62–63 tok/s** |
+|      16 | 12.1 GB | **59–60 tok/s** |
+|      18 | 11.3 GB | **57–59 tok/s** |
 
 When the model is CPU-offloaded, MTP provides only a modest improvement because the CPU/PCIe path becomes a dominant part of the inference cost.
-
 
 # Tested Models
 
@@ -500,11 +499,12 @@ MTP in this case improved the throughput by 10% with about 800/900 MB of additio
 
 ##### Tests done after Suspend
 
-| CPU MoE |    VRAM |      MTP 2 Way + KV Q4 |
-| ------: | ------: | ---------------: |
-|      14 | 13.5 GB | **55–57 tok/s** | 
-|      16 | 12.8 GB | **52–57 tok/s** | 
-|      18 | 12.1 GB | **52–54 tok/s** |
+
+| CPU MoE |    VRAM | MTP 2 Way + KV Q4 |
+| ------: | ------: | ----------------: |
+|      14 | 13.5 GB |  **55–57 tok/s** |
+|      16 | 12.8 GB |  **52–57 tok/s** |
+|      18 | 12.1 GB |  **52–54 tok/s** |
 
 
 | CPU MoE |    VRAM |   No MTP + KV Q4 |
@@ -514,22 +514,22 @@ MTP in this case improved the throughput by 10% with about 800/900 MB of additio
 |      16 | 12.0 GB |   **\~50 tok/s** |
 |      18 | 11.3 GB | **48–49 tok/s** |
 
-
 ##### Tests done after fresh Reboot
 
-| CPU MoE |    VRAM |  MTP 2 Way + KV Q4 |
-| ------: | ------: | ---------------:   |
-|     14  | 13.5 GB | **65–67 tok/s**    |
-|     16  | 12.8 GB | **59–67 tok/s**    |
-|     18  | 12.1 GB | **58–61 tok/s**    |
+
+| CPU MoE |    VRAM | MTP 2 Way + KV Q4 |
+| ------: | ------: | ----------------: |
+|      14 | 13.5 GB |  **65–67 tok/s** |
+|      16 | 12.8 GB |  **59–67 tok/s** |
+|      18 | 12.1 GB |  **58–61 tok/s** |
 
 
-| CPU MoE |    VRAM |  No MTP + KV Q4  |
+| CPU MoE |    VRAM |   No MTP + KV Q4 |
 | ------: | ------: | ---------------: |
-|      12 | 13.5 GB | **65–66 tok/s**  |
-|      14 | 12.7 GB | **62–63 tok/s**  |
-|      16 | 12.1 GB | **59–60 tok/s**  |
-|      18 | 11.3 GB | **57–59 tok/s**  |
+|      12 | 13.5 GB | **65–66 tok/s** |
+|      14 | 12.7 GB | **62–63 tok/s** |
+|      16 | 12.1 GB | **59–60 tok/s** |
+|      18 | 11.3 GB | **57–59 tok/s** |
 
 ##### Observations
 
