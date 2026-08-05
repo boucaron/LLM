@@ -38,7 +38,8 @@ The CPU was configured with a conservative power limit of approximately 75 W pea
 
 # Executive Summary
 
-Overall the RTX 5060 Ti exceeded my expectations. Every tested model fit comfortably within 16 GB of VRAM using aggressive quantisation, and most sparse models delivered between 75 and 90 tokens/s without MTP. Even larger reasoning-oriented models remained responsive enough for interactive use.
+Overall, the RTX 5060 Ti exceeded my expectations. Its 16 GB of VRAM was sufficient to run aggressively quantized 25–35B-class MoE models entirely on the GPU at roughly 80–105 tokens/s, with MTP pushing some configurations to around 137 tokens/s. Even higher-quality IQ4_NL variants that exceeded VRAM capacity remained usable through CPU MoE offloading, making larger reasoning-oriented models practical for interactive use.
+
 
 *NB*: Numbers are for **very aggressive 2 bits quantization and KV cache 4 bits quantization**. Except for 9B models using 4 bits quantization and default KV cache quantization.
 
@@ -72,7 +73,7 @@ I hope we will see also more smaller dense models with MTP.
 
 ## Offloading to CPU Memory
 
-The model is too big to fit the GPU VRAM.
+The model does not fit entirely in GPU VRAM at this quantization level.
 Offloading works reasonably well for MOE models.
 For this test we are using non MTP and MTP variants with KV cache 4 bits quantization and small 32K tokens : 
 - Qwen3.6-35B-A3B-UD-IQ4_NL_MTP [Link](https://huggingface.co/unsloth/Qwen3.6-35B-A3B-GGUF?show_file_info=Qwen3.6-35B-A3B-UD-IQ4_NL.gguf)
