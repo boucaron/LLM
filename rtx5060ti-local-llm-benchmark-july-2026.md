@@ -14,7 +14,7 @@ Until recently I never installed a dedicated GPU in my workstation because most 
 
 The recent generation of sparse Mixture-of-Experts models has changed that. There are now several capable LLMs that comfortably fit within 16 GB of VRAM.
 
-The RTX 5060 Ti provides over 400 GB/s of memory bandwidth, compared with roughly 120 GB/s for the MacBook Air M4. Since LLM inference is largely memory-bandwidth bound, I expected approximately a threefold improvement in generation throughput.
+The RTX 5060 Ti provides over 400 GB/s of memory bandwidth, compared with roughly 120 GB/s for the MacBook Air M4. The substantially higher memory bandwidth suggested that decode throughput should improve significantly, although actual performance would also depend on model architecture, quantization, llama.cpp kernels and whether inference remained entirely on the GPU.
 
 From a practical point of view, this moves local LLMs from small experiments to tools that can be used productively every day. Running coding assistants and autonomous agents locally becomes genuinely feasible.
 
@@ -40,7 +40,7 @@ The CPU was configured with a conservative power limit of approximately 75 W pea
 
 Overall the RTX 5060 Ti exceeded my expectations. Every tested model fit comfortably within 16 GB of VRAM using aggressive quantisation, and most sparse models delivered between 75 and 90 tokens/s without MTP. Even larger reasoning-oriented models remained responsive enough for interactive use.
 
-*NB*: Numbers are for **very aggressive 2 bits quantification and KV cache 4 bits quantification**. Except for 9B models using 4 bits quantification and default KV cache quantification.
+*NB*: Numbers are for **very aggressive 2 bits quantization and KV cache 4 bits quantization**. Except for 9B models using 4 bits quantization and default KV cache quantization.
 
 
 | Model                             | Avg tok/s | VRAM    | Practical on 16 GB? |
@@ -59,22 +59,22 @@ Overall the RTX 5060 Ti exceeded my expectations. Every tested model fit comfort
 
 ## MTP
 
-The RTX 5060 TI responds well to MTP with 2 ways.
+The RTX 5060 TI responds well to MTP with two-token MTP/speculative decoding.
 
-There is at least 40% throughput increase on Qwen 3.6 27B Dense and Qwen 3.6 35B A3B, it is a major improvement:
+MTP increased throughput by approximately 44% on the 27B dense model and 60% on the 35B A3B model, it is a major improvement:
 
-- For the dense 27B the user experience is moving from experiments to the low confort zone.
+- For the dense 27B the user experience is moving from experiments to the low comfort zone.
 - For the sparse 35B the throughput is such that agentic job is possible locally.
 
-The MTP throughput increase is good enough, to start to thing about tuning the model to improve 'knowledge' with less quantification, or having more 'precision' in the KV cache.
+The MTP throughput increase is good enough, to start to think about tuning the model to improve 'knowledge' with less quantization, or having more 'precision' in the KV cache.
 
 I hope we will see also more smaller dense models with MTP.
 
 ## Offloading to CPU Memory
 
 The model is too big to fit the GPU VRAM.
-Offloading works reasonability well for MOE models.
-For this test we are using non MTP and MTP variants with KV cache 4 bits quantification and small 32K tokens : 
+Offloading works reasonably well for MOE models.
+For this test we are using non MTP and MTP variants with KV cache 4 bits quantization and small 32K tokens : 
 - Qwen3.6-35B-A3B-UD-IQ4_NL_MTP [Link](https://huggingface.co/unsloth/Qwen3.6-35B-A3B-GGUF?show_file_info=Qwen3.6-35B-A3B-UD-IQ4_NL.gguf)
 - Qwen3.6-35B-A3B-UD-IQ4_NL [Link](https://huggingface.co/unsloth/Qwen3.6-35B-A3B-MTP-GGUF?show_file_info=Qwen3.6-35B-A3B-UD-IQ4_NL.gguf)
 
@@ -92,6 +92,8 @@ For this test we are using non MTP and MTP variants with KV cache 4 bits quantif
 |      14 | 12.7 GB | **62–63 tok/s**  |
 |      16 | 12.1 GB | **59–60 tok/s**  |
 |      18 | 11.3 GB | **57–59 tok/s**  |
+
+When the model is CPU-offloaded, MTP provides only a modest improvement because the CPU/PCIe path becomes a dominant part of the inference cost.
 
 
 # Tested Models
@@ -260,7 +262,7 @@ Prompt 3: Output 296 tokens 3.7s 79.78 t/s
 
 VRAM used: 11.5 GB
 
-The coding model maintained around 80 tokens/s while producing relatively concise responses, making it particularly pleasant for programming tasks.
+The coding model maintained around 80 tokens/s while producing relatively concise responses, making the measured generation speed particularly suitable for interactive coding workloads.
 
 ## Qwen 3.6 35B A3B
 
@@ -289,7 +291,7 @@ VRAM used: 11.2 GB
 
 ### Observations
 
-This model offers an excellent compromise between reasoning capability and generation speed. Despite its larger size, it consistently maintained over 80 tokens/s while remaining comfortably within the 16 GB VRAM budget.
+This model offers an excellent compromise between model size and generation speed in this configuration. Despite its larger size, it consistently maintained over 80 tokens/s while remaining comfortably within the 16 GB VRAM budget.
 
 ### MTP Variant
 
@@ -303,13 +305,13 @@ VRAM used: 12.5 GB
 
 #### Observations
 
-It is a big improvement in throughput, without the MTP it is already very fast. There is a good 1 GB increase due to the 2 ways MTP. About 40 to 60 % throughput increase, this is big. No further improvement in throughput above 2 ways.
+It is a big improvement in throughput, without the MTP it is already very fast. There is a good 1 GB increase due to the 2 ways MTP. About 40 to 60 % throughput increase, this is big. No further improvement in throughput beyond two draft tokens.
 
 ### Offloading Memory to CPU
 
 In this experiment I consider the effect on the throughput when the model cannot fit on the GPU.
 
-We use the model Qwen3.6-35B-A3B-GGUF with this quantification variant: IQ4_NL from unsloth [Link](https://huggingface.co/unsloth/Qwen3.6-35B-A3B-GGUF?show_file_info=Qwen3.6-35B-A3B-UD-IQ4_NL.gguf). The model is about 18GB without any KV cache.
+We use the model Qwen3.6-35B-A3B-GGUF with this quantization variant: IQ4_NL from unsloth [Link](https://huggingface.co/unsloth/Qwen3.6-35B-A3B-GGUF?show_file_info=Qwen3.6-35B-A3B-UD-IQ4_NL.gguf). The model is about 18GB without any KV cache.
 
 ### Offloading 16
 
@@ -397,9 +399,9 @@ VRAM used: 9.7 GB
 
 #### Observations
 
-The prefill throughput is impacted so there is additional latency at this level.
+Prefill throughput was not part of the primary benchmark. It was measured opportunistically during the CPU-offloading and long-context experiments where prefill latency was particularly relevant.
 
-All previous tests there is no KV cache quantification tuning done.
+All previous tests there is no KV cache quantization tuning done.
 
 Offloading 16 case: we reach about 59 tokens per sec. This is not super fast, but the user experience is still very good.
 
@@ -409,7 +411,7 @@ Offloading 20: the throughput is in the 55 tokens per sec. The user experience i
 
 Offloading 24: the throughput goes down to about 50 tokens per sec. The user experience is ok and the VRAM used is the 9.7 GB, it leaves a lot of head room to experiment.
 
-I would say the limiting factor in such cases are the PCI Xpress bus and the CPU/RAM Memory Bandwidth.
+The results suggest that PCIe transfers and/or CPU memory bandwidth become important bottlenecks once a significant portion of the MoE computation is moved to the CPU.
 
 ### Offloading Memory to CPU/MTP
 
@@ -493,8 +495,9 @@ MTP in this case improved the throughput by 10% with about 800/900 MB of additio
 
 #### Additional measurements
 
-##### Tests done after Suspend
+**Reproducibility note**: On this system, Windows suspend/resume can reduce inference performance. Final benchmark results were therefore collected after a fresh reboot.
 
+##### Tests done after Suspend
 
 | CPU MoE |    VRAM |      MTP 2 Way + KV Q4 |
 | ------: | ------: | ---------------: |
@@ -513,9 +516,6 @@ MTP in this case improved the throughput by 10% with about 800/900 MB of additio
 
 ##### Tests done after fresh Reboot
 
-**Important:** Windows suspend/resume can affect inference performance on this system. Benchmark runs should be performed after a fresh reboot to ensure reproducible GPU/PCIe performance.
-
-
 | CPU MoE |    VRAM |  MTP 2 Way + KV Q4 |
 | ------: | ------: | ---------------:   |
 |     14  | 13.5 GB | **65–67 tok/s**    |
@@ -532,7 +532,7 @@ MTP in this case improved the throughput by 10% with about 800/900 MB of additio
 
 ##### Observations
 
-For CPU-offloaded Qwen3.6-35B-A3B IQ4\_NL, MTP is not a game changer. It provides a modest throughput improvement, but its main cost is additional VRAM rather than a dramatic increase in generation speed.
+For CPU-offloaded Qwen3.6-35B-A3B IQ4\_NL, MTP provides little additional benefit when CPU offloading is already the dominant performance constraint.
 
 ### Offloading with Context Variants
 
@@ -606,6 +606,8 @@ llama-server.exe
 --cache-type-k q4_0 --cache-type-v q4_0
 ```
 
+This experiment measures runtime behavior at large context sizes, not the model's ability to retrieve or reason over information located 200K tokens into the context.
+
 Prefill: 195105 tokens 4min 34s 711.45 tokens/s
 
 Prompt: Count the number of repetitions in this file
@@ -658,7 +660,7 @@ VRAM used: 11.8 GB
 
 ## Ornith 1.0 9B
 
-I am interested in this smaller model in the case an agent runs some cmd lines for instance. It is not really for coding, even it is a nice model. A K4_M variant is used, memory size is not an issue.
+I am interested in this smaller model in the case an agent runs some cmd lines for instance. It is not really for coding, even it is a nice model. A K4_M variant is used, VRAM capacity is not a limiting factor.
 
 ```bash
 llama-server.exe 
@@ -711,13 +713,13 @@ Prompt 3: Output 801 tokens 8.9 s  89.79 t/s
 
 VRAM used:  7.4 GB
 
-An another small improvement on the throughput, the answers are a bit longer.
+Another small improvement on the throughput, the answers are a bit longer.
 
 *NB*: I tried above 2 and there is a diminishing return. So 2 seems to be the best candidate.
 
 ## Kwaipilot_KAT-Coder-V2.5-Dev
 
-A Qwen 35B A3B variant with better benchmarks on agentic coding, which is the interesting part where the base model has some weaknesses.
+This variant is interesting here because it is specifically intended for coding and agentic workloads.
 
 *NB*: The bartowski variant is used, there is no unsloth implementation at the time of this test.
 
@@ -746,7 +748,7 @@ Qwythos-9B-Claude-Mythos-5-1M-MTP-Q4_K_M [Link](https://huggingface.co/empero-ai
 
 ```bash
 llama-server.exe 
--m ..\Qwythos-9B-Claude-Mythos-5-1M-MTP-Q4_K_Mgguf 
+-m ..\Qwythos-9B-Claude-Mythos-5-1M-MTP-Q4_K_M.gguf 
 --ctx-size 32768 
 --temp 0.6 --top-p 0.95 --top-k 20 
 --repeat-penalty 1.05
@@ -784,15 +786,18 @@ Prompt 3: Output 319 tokens 4.0 s  80.51 t/s
 
 VRAM used:  7.6 GB
 
+MTP does not automatically improve throughput.
+
 # Conclusions
 
 The RTX 5060 Ti 16 GB proved to be an excellent entry point for local LLM inference. Sparse models in the 25–35B class now run at speeds that make interactive usage genuinely comfortable (slightly above 50 tokens/s), to super comfortable when the MTP is enabled.
 
 Compared with the MacBook Air M4, generation throughput improved by roughly three to five times depending on the model, which fundamentally changes the user experience. Instead of waiting for responses, local agents become practical for everyday work.
+These comparisons are based on my earlier M4 experiments using comparable model/configuration combinations; they are not a controlled same-day hardware comparison.
 
 Perhaps the biggest surprise was that even the Qwen 3.6 27B reasoning model remained usable at around 34 tokens/s and with MTP around 45 tokens/s. While not as fast as the sparse A3B models, it is responsive enough that reasoning no longer feels like a bottleneck.
 
-Overall, these results suggest that 16 GB GPUs have become a practical sweet spot for local inference. A single mid-range consumer GPU is now sufficient to run several state-of-the-art sparse models at highly interactive speeds.
+These results suggest that 16 GB GPUs can be a practical sweet spot for local inference, particularly when using aggressively quantized MoE models. A single mid-range consumer GPU is now sufficient to run several state-of-the-art sparse models at highly interactive speeds.
 
 # ChangeLog
 
