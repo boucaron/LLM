@@ -96,41 +96,41 @@ For this test we are using non MTP and MTP variants with KV cache 4 bits quantiz
 
 When the model is CPU-offloaded, MTP provides only a modest improvement because the CPU/PCIe path becomes a dominant part of the inference cost. The context size was set to 32KTok. Those figures shows you how much context you can put on the GPU without offloading.
 
-## Offloading to CPU Memory with 3Bits Quant
+## Offloading MoE Layers to CPU Memory with 3-Bit Quantization
 
-This is a continuation of the previous experiment, we try to squeeze more in the GPU to achieve a better throughput.
+This is a continuation of the previous experiment. Here, we try to squeeze more of the model into the GPU to achieve better throughput.
 
-The model is still a Qwen 3.6 35B A3B with 3 bits quantization :
+The model is still a Qwen3.6-35B-A3B with 3-bit quantization:
 
-- Qwen3.6-35B-A3B-UD-IQ3_S [Link](https://huggingface.co/unsloth/Qwen3.6-35B-A3B-MTP-GGUF?show_file_info=Qwen3.6-35B-A3B-UD-IQ3_S.gguf)
+* Qwen3.6-35B-A3B-UD-IQ3_S — [Link](https://huggingface.co/unsloth/Qwen3.6-35B-A3B-MTP-GGUF?show_file_info=Qwen3.6-35B-A3B-UD-IQ3_S.gguf)
 
+| **CPU MoE Layers Offloaded** | **Ctx Size** | **VRAM** | **No MTP + KV Q4** |
+| ---------------------------: | -----------: | -------: | -----------------: |
+|                            0 |      32 KTok |  15.4 GB |  **102–104 tok/s** |
+|                            0 |     128 KTok |  15.6 GB |    **98–99 tok/s** |
+|                            0 |     256 KTok |  15.6 GB |    **22–23 tok/s** |
+|                            8 |     256 KTok |  14.7 GB |    **78–80 tok/s** |
+|                            4 |     256 KTok |  15.4 GB |    **88–89 tok/s** |
 
-| CPU MoE | Ctx Size |    VRAM |     No MTP + KV Q4 |
-| ------: | -------: | ------: | -----------------: |
-|       0 |  32 KTok | 15.4 GB | **102–104 tok/s** |
-|       0 | 128 KTok | 15.6 GB |   **98–99 tok/s** |
-|       0 | 256 KTok | 15.6 GB |   **22–23 tok/s** |
-|       8 | 256 KTok | 14.7 GB |   **78–80 tok/s** |
-|       4 | 256 KTok | 15.4 GB |   **88–89 tok/s** |
+| **CPU MoE Layers Offloaded** | **Ctx Size** | **VRAM** | **MTP 1 Way + KV Q4** |
+| ---------------------------: | -----------: | -------: | --------------------: |
+|                            0 |      32 KTok |  15.6 GB |     **125–128 tok/s** |
+|                            0 |     128 KTok |  15.6 GB |      **89–100 tok/s** |
+|                            8 |     256 KTok |  15.3 GB |       **82–86 tok/s** |
+|                            6 |     256 KTok |  15.6 GB |       **83–84 tok/s** |
 
+MTP 2 Way did not provide any additional gain compared to MTP 1 Way, so I did not include the figures.
 
-| CPU MoE | Ctx Size |    VRAM |  MTP 1 Way + KV Q4 |
-| ------: | -------: | ------: | -----------------: |
-|       0 |  32 KTok | 15.6 GB | **125–128 tok/s** |
-|       0 | 128 KTok | 15.6 GB |  **89–100 tok/s** |
-|       8 | 256 KTok | 15.3 GB |   **82–86 tok/s** |
-|       6 | 256 KTok | 15.6 GB |   **83–84 tok/s** |
+For the No MTP case with a 256 KTok context, without any model offloading, llama.cpp slightly offloaded the KV cache to CPU memory, which significantly reduced the throughput.
 
-MTP 2 Way did not provide any gain with respect to MTP 1 Way, so I did not put the figures.
+Similarly, with MTP 1 Way and a 128 KTok context, there is also partial offloading of the KV cache, and the throughput starts to decrease.
 
-For the case No MTP with 256 KTok context, without any offloading of the model, the KV cache was slightly offloaded by llamacpp to the CPU/MEM and it reduced slightly the throughput.
+As you can see, by offloading a small number of MoE layers to CPU memory, we managed to recover a large part of the lost throughput.
 
-Similarly for the MTP 1 Way with 128 KTok, there is also a partial offloading of the KV cache and the throughput reduction starts.
+Interestingly, MTP provides an improvement up to a certain context size. Above that threshold, throughput is higher without MTP, because more layers and the KV cache can remain on the GPU.
 
-As you can see after, we small offloading of the MoE to the CPU/Mem we managed to restore a lot of the throughput.
+For a 256 KTok context, No MTP with a small number of MoE layers offloaded to CPU memory is faster. Thanks to this small amount of model offloading, we can maintain high performance while achieving a decent context size.
 
-Interestingly the MTP provides an improvement up to a given context size, above a given threshold the throughput is higher without MTP, due to more layers and the KV cache on the GPU. For 256 KTok context, No MTP with a smaller offloading to the CPU/Memory is faster.
-Thanks to the small offloading of the model on the CPU/Memory, the performance are high and we can have a descent context size.
 
 ## Dense Models
 
