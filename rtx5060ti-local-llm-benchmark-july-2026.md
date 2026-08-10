@@ -43,19 +43,19 @@ Overall, the RTX 5060 Ti exceeded my expectations. Its 16 GB of VRAM was suffici
 *NB*: Numbers are for **very aggressive 2 bits quantization and KV cache 4 bits quantization**. Except for 9B models using 4 bits quantization and default KV cache quantization.
 
 
-| Model                             | Avg tok/s | VRAM    | Practical on 16 GB? |
-| --------------------------------- | --------- | ------- | -------------------- |
-| Gemma 4 26B A4B                   | \~90      | 10.9 GB | ⭐⭐⭐⭐⭐           |
-| Qwen 3.6 27B                      | \~30      | 10.4 GB | ⭐⭐⭐☆☆           |
-| Qwen 3 Coder 30B A3B Instruct     | \~75      | 11.5 GB | ⭐⭐⭐⭐⭐           |
-| Qwen 3.6 35B A3B Instruct         | \~80      | 11.2 GB | ⭐⭐⭐⭐⭐           |
-| Qwen 3.6 27B MTP                  | \~45      | 11.0 GB | ⭐⭐⭐⭐☆           |
-| Qwen 3.6 35B A3B Instruct MTP     | \~120     | 12.5 GB | ⭐⭐⭐⭐⭐           |
-| Ornith 1.0 35B                    | \~90      | 11.8 GB | ⭐⭐⭐⭐⭐           |
-| Ornith 1.0 9B                     | \~60      | 6.8 GB  | ⭐⭐⭐⭐☆           |
-| Ornith 1.0 9B MTP                 | \~80      | 7.4 GB  | ⭐⭐⭐⭐⭐           |
-| KAT-Coder-V2.5-Dev                | \~80      | 10.5 GB | ⭐⭐⭐⭐⭐           |
-| Qwythos-9B-Claude-Mythos-5-1M MTP | \~80      | 7.7 GB  | ⭐⭐⭐⭐⭐           |
+| Model                                   | Avg tok/s | VRAM    | Practical on 16 GB? |
+| --------------------------------------- | --------- | ------- | -------------------- |
+| Gemma 4 26B A4B IQ2\_XXS               | \~90      | 10.9 GB | ⭐⭐⭐⭐⭐           |
+| Qwen 3.6 27B IQ2\_XXS                  | \~30      | 10.4 GB | ⭐⭐⭐☆☆           |
+| Qwen 3 Coder 30B A3B Instruct IQ2\_XXS | \~75      | 11.5 GB | ⭐⭐⭐⭐⭐           |
+| Qwen 3.6 35B A3B Instruct IQ2\_XXS     | \~80      | 11.2 GB | ⭐⭐⭐⭐⭐           |
+| Qwen 3.6 27B MTP IQ2\_XXS              | \~45      | 11.0 GB | ⭐⭐⭐⭐☆           |
+| Qwen 3.6 35B A3B Instruct MTP IQ2\_XXS | \~120     | 12.5 GB | ⭐⭐⭐⭐⭐           |
+| Ornith 1.0 35B IQ2\_XXS                | \~90      | 11.8 GB | ⭐⭐⭐⭐⭐           |
+| Ornith 1.0 9B                           | \~60      | 6.8 GB  | ⭐⭐⭐⭐☆           |
+| Ornith 1.0 9B MTP                       | \~80      | 7.4 GB  | ⭐⭐⭐⭐⭐           |
+| KAT-Coder-V2.5-Dev IQ2\_XXS            | \~80      | 10.5 GB | ⭐⭐⭐⭐⭐           |
+| Qwythos-9B-Claude-Mythos-5-1M MTP       | \~80      | 7.7 GB  | ⭐⭐⭐⭐⭐           |
 
 ## MTP
 
@@ -70,7 +70,7 @@ The MTP throughput increase is good enough, to start to think about tuning the m
 
 I hope we will see also more smaller dense models with MTP.
 
-## Offloading to CPU Memory
+## Offloading to CPU Memory with 4Bits Quant
 
 The model does not fit entirely in GPU VRAM at this quantization level.
 Offloading works reasonably well for MOE models.
@@ -94,7 +94,47 @@ For this test we are using non MTP and MTP variants with KV cache 4 bits quantiz
 |      16 | 12.1 GB | **59–60 tok/s** |
 |      18 | 11.3 GB | **57–59 tok/s** |
 
-When the model is CPU-offloaded, MTP provides only a modest improvement because the CPU/PCIe path becomes a dominant part of the inference cost.
+When the model is CPU-offloaded, MTP provides only a modest improvement because the CPU/PCIe path becomes a dominant part of the inference cost. The context size was set to 32KTok. Those figures shows you how much context you can put on the GPU without offloading.
+
+## Offloading to CPU Memory with 3Bits Quant
+
+This is a continuation of the previous experiment, we try to squeeze more in the GPU to achieve a better throughput.
+
+The model is still a Qwen 3.6 35B A3B with 3 bits quantization :
+
+- Qwen3.6-35B-A3B-UD-IQ3_S [Link](https://huggingface.co/unsloth/Qwen3.6-35B-A3B-MTP-GGUF?show_file_info=Qwen3.6-35B-A3B-UD-IQ3_S.gguf)
+
+
+| CPU MoE | Ctx Size |    VRAM |     No MTP + KV Q4 |
+| ------: | -------: | ------: | -----------------: |
+|       0 |  32 KTok | 15.4 GB | **102–104 tok/s** |
+|       0 | 128 KTok | 15.6 GB |   **98–99 tok/s** |
+|       0 | 256 KTok | 15.6 GB |   **22–23 tok/s** |
+|       8 | 256 KTok | 14.7 GB |   **78–80 tok/s** |
+|       4 | 256 KTok | 15.4 GB |   **88–89 tok/s** |
+
+
+| CPU MoE | Ctx Size |    VRAM |  MTP 1 Way + KV Q4 |
+| ------: | -------: | ------: | -----------------: |
+|       0 |  32 KTok | 15.6 GB | **125–128 tok/s** |
+|       0 | 128 KTok | 15.6 GB |  **89–100 tok/s** |
+|       8 | 256 KTok | 15.3 GB |   **82–86 tok/s** |
+|       6 | 256 KTok | 15.6 GB |   **83–84 tok/s** |
+
+MTP 2 Way did not provide any gain with respect to MTP 1 Way, so I did not put the figures.
+
+For the case No MTP with 256 KTok context, without any offloading of the model, the KV cache was slightly offloaded by llamacpp to the CPU/MEM and it reduced slightly the throughput.
+
+Similarly for the MTP 1 Way with 128 KTok, there is also a partial offloading of the KV cache and the throughput reduction starts.
+
+As you can see after, we small offloading of the MoE to the CPU/Mem we managed to restore a lot of the throughput.
+
+Interestingly the MTP provides an improvement up to a given context size, above a given threshold the throughput is higher without MTP, due to more layers and the KV cache on the GPU. For 256 KTok context, No MTP with a smaller offloading to the CPU/Memory is faster.
+Thanks to the small offloading of the model on the CPU/Memory, the performance are high and we can have a descent context size.
+
+## Dense Models
+
+The RTX 5060 Ti 16 GB is surprisingly capable of local 27B-class inference. For dense models, however, the decisive factor is not simply whether the model can be loaded: keeping both model weights and KV cache in VRAM is critical. Fully GPU-resident Q3 configurations can reach \~43 tok/s at 32K and remain usable beyond 130K context, whereas crossing into CPU memory can reduce throughput to single-digit tokens per second.
 
 # Tested Models
 
@@ -234,6 +274,121 @@ VRAM used: 11.0 GB
 #### Observations
 
 It is an interesting boost in performances, about 40% more in throughput. This is still an important improvement from a user experience point of view. Best results were with 2 way MTP, above it does not bring more throughput.
+
+### 4Bits and 3Bits Quant
+
+The 2 bits models are fast, but there is a slight reduction in their capabilities.
+
+I took the MTP variants from https://huggingface.co/unsloth/Qwen3.6-27B-MTP-GGUF:
+
+- 4Bits: IQ4_NL with 16.3 GB
+- 3Bits:
+  - Q3_K_M with 13.8 GB
+  - Q3_K_S with 12.6 GB
+
+#### 4Bits with Offloading
+
+This dense model is having *64 layers*, this is important of the offloading experiment that follows.
+
+Template used for this experiment:
+
+```bash
+llama-server.exe 
+-m ..\Qwen3.6-27B-IQ4_NL.gguf 
+--ctx-size 32768 
+--temp 1.0 --top-p 0.95 --top-k 20 --min-p 0.00 
+-fa on --cache-type-k q4_0 --cache-type-v q4_0 
+--chat-template-kwargs "{\"enable_thinking\":false}" 
+-np 1 --spec-type draft-mtp --spec-draft-n-max 2
+-ngl LAYERS_TO_KEEP_ON_GPU
+```
+
+The last parameter is *-ngl* which is the number of layers we are going to keep on the GPU.
+
+Don't forget that the KV cache tries to stay on the GPU to be faster, but if it is too big llamacpp will put it on the CPU memory and it will kill the inference throughput.
+
+
+| Layers in GPU | VRAM Usage | Throughput tokens/sec |
+| ------------- | ---------- | --------------------- |
+| 48            | 13.1       | ~ 13                  |
+| 51            | 13.7       | ~ 14                  |
+| 59            | 15.4       | ~ 23                  |
+| 60            | 15.5       | ~ 24                  |
+
+#### Observations
+
+First I kept 48 layers of the 64 on the GPU, the VRAM usage is ok, the throughput not great.
+
+Then I pushed a tiny bit further, with little throughput gain.
+
+After I really put on the last two entries has much on the GPU as possible, at the cost of the VRAM and the context, it makes a big difference on the throughput.
+
+Offloading the dense models like this one are putting a lot of stress on the '*slow*' PCIXpress and the CPU/Memory.
+
+#### 3Bits Experiments
+
+Following the previous case where it matters a lot to fit as much as possible this dense model on the GPU, I took a 3Bits version of the model.
+
+##### Q3_K_M Experiment
+
+```bash
+llama-server.exe 
+-m ..\Qwen3.6-27B-Q3_K_M.gguf .gguf 
+--ctx-size 32768 
+--temp 1.0 --top-p 0.95 --top-k 20 --min-p 0.00 
+-fa on --cache-type-k q4_0 --cache-type-v q4_0 
+--chat-template-kwargs "{\"enable_thinking\":false}" 
+-np 1 --spec-type draft-mtp --spec-draft-n-max 2
+-ngl 99
+```
+
+I performed 3 runs, one without MTP, one with MTP set to 1 and one with MTP set to 2 (above I did not have any gain).
+
+
+| MTP  | VRAM Used (GB) | Throughput (tokens/sec) |
+| ---- | -------------- | ----------------------- |
+| None | 14.1           | ~ 25                    |
+| 1    | 14.5           | ~ 36                    |
+| 2    | 14.8           | ~ 41                    |
+
+###### Observations
+
+The model fits in VRAM there is a major gain in throughput.
+
+MTP-2 produced a very large improvement on the fully GPU-resident Q3\_K\_M configuration, raising throughput from roughly 25 to over 40 tok/s.
+
+It is an important gain to use MTP in this context, with some cost in VRAM.
+
+The context is limited for this variant of the 3Bit model, I managed to put above 75K tokens which is not enough in some cases, above a threshold the KV cache offloads to the CPU RAM and the performance degrades a lot (~ 9 tokens/sec).
+
+#### Q3_K_S Experiment
+
+```bash
+llama-server.exe 
+-m ..\Qwen3.6-27B-Q3_K_S.gguf 
+--ctx-size 110000 
+--temp 1.0 --top-p 0.95 --top-k 20 --min-p 0.00 -fa on 
+--cache-type-k q4_0 --cache-type-v q4_0 
+--chat-template-kwargs "{\"enable_thinking\":false}" -np 1 -ngl 99 
+--spec-type draft-mtp --spec-draft-n-max 2
+```
+
+Here the experiment is to check how much we can put without killing the throughput.
+
+
+| Context (KTok) | VRAM Used (GB) | Throughput (tokens/sec)       |
+| -------------- | -------------- | ----------------------------- |
+| 32             | 13.5 -> 13.7   | Start: ~40 -> @28 KTok: ~ 36  |
+| 64             | 14.4 -> 14.6   | Start: ~40 -> @52 KTok: ~ 31  |
+| 96             | 15.5 -> 15.5   | Start: ~40 -> @77 KTok: ~ 27  |
+| 128            | 15.6 -> 15.6   | Start: ~37 -> @111 KTok: ~ 19 |
+| 110            | 15.5 -> 15.5   | Start: ~40 -> @77 KTok: ~ 27  |
+
+##### Observations
+
+The smaller Q3\_K\_S variant can maintain full GPU residency beyond 100K context, although generation throughput progressively decreases as the KV cache grows.
+
+The smaller Q3\_K\_S variant leaves enough VRAM headroom for a very large Q4 KV cache. In testing, it remained GPU-resident at approximately 100K context and still generated at 27 token/s near the end of the context. This demonstrates that reducing model size slightly can be more valuable than expected when the saved VRAM is converted into KV-cache capacity.
 
 ## Qwen 3 Coder 30B A3B Instruct
 
@@ -638,6 +793,212 @@ Inference: 204 tokens 7.0s 29.19 t/s
 
 VRAM Used: 14.3 GB at the end of the inference.
 
+### Experiments with 3Bit Quant
+
+I try to push more capacities from this model in 3Bit Quant that fits fully on the GPU. I use the model from Unsloth in MTP mode (even if the file name does not denote it)
+
+#### No MTP
+
+```bash
+llama-server 
+-m ..\Qwen3.6-35B-A3B-UD-IQ3_S.gguf 
+-ngl 99 --ctx-size 32768 
+--temp 0.7 --min-p 0.0 --top-p 0.80 --top-k 20 
+--repeat-penalty 1.00 --presence-penalty 1.5 
+--chat-template-kwargs "{\"enable_thinking\":false}" 
+-fa on  --cache-type-k q4_0 --cache-type-v q4_0 -np 1
+```
+
+Prompt 1: Output 690 tokens 6.6s 104.72 t/s
+
+Prompt 2: Output 933 tokens 9.0s 103.95 t/s
+
+Prompt 3: Output 940 tokens 9.1s 102.96 t/s
+
+VRAM used: 15.4 GB
+
+##### 128 KTok Context
+
+Prompt 1: Output 619 tokens 6.2s 99.04 t/s
+
+Prompt 2: Output 896 tokens 8.8s  98.74 t/s
+
+Prompt 3: Output 685 tokens 7.0s  98.18 t/s
+
+##### 256 KTok Context
+
+Prompt 1: Output 565 tokens 24s 23.52 t/s
+
+Prompt 2: Output 704 tokens 30s 23.06 t/s
+
+Prompt 3: Output 766 tokens 34s 22.19 t/s
+
+There is a major offloading on the CPU/MEM of the KV Cache, it kills performance
+
+##### 256KTok Context - Offloading MOE
+
+###### 8 MOE
+
+```bash
+llama-server 
+-m ..\Qwen3.6-35B-A3B-UD-IQ3_S.gguf 
+-ngl 99 
+--ctx-size 262144 
+--temp 0.7 --min-p 0.0 --top-p 0.80 --top-k 20 
+--repeat-penalty 1.00 --presence-penalty 1.5 
+--chat-template-kwargs "{\"enable_thinking\":false}" 
+-fa on  --cache-type-k q4_0 --cache-type-v q4_0 
+-np 1
+--n-cpu-moe 8
+```
+
+Prompt 1: Output 602 tokens 7.6s 78.79 t/s
+
+Prompt 2: Output 983 tokens 12s 80.07 t/s
+
+Prompt 3: Output 798 tokens 10.0s 80.01 t/s
+
+VRAM Used: 14.7 GB
+
+It means we can either increase the context size on the VRAM or reduce the offloading on the CPU to increase the speed.
+
+###### 4 MOE
+
+llama-server
+-m ..\Qwen3.6-35B-A3B-UD-IQ3_S.gguf
+-ngl 99
+--ctx-size 262144
+--temp 0.7 --min-p 0.0 --top-p 0.80 --top-k 20
+--repeat-penalty 1.00 --presence-penalty 1.5
+--chat-template-kwargs "{\"enable_thinking\":false}"
+-fa on  --cache-type-k q4_0 --cache-type-v q4_0
+-np 1
+--n-cpu-moe 4
+
+Prompt 1: Output 637 tokens 7.2s 88.38 t/s
+
+Prompt 2: Output 793 tokens 8.8s 89.62 t/s
+
+Prompt 3: Output 688 tokens 7.7s 89.16 t/s
+
+VRAM Used: 15.4 GB
+
+About 10% throughput increase and the KVCache still fits in the VRAM
+
+#### MTP 1
+
+```bash
+llama-server 
+-m ..\Qwen3.6-35B-A3B-UD-IQ3_S.gguf 
+-ngl 99 --ctx-size 32768 
+--temp 0.7 --min-p 0.0 --top-p 0.80 --top-k 20 
+--repeat-penalty 1.00 --presence-penalty 1.5 
+--chat-template-kwargs "{\"enable_thinking\":false}" 
+-fa on  --cache-type-k q4_0 --cache-type-v q4_0 -np 1 
+--spec-type draft-mtp --spec-draft-n-max 1
+```
+
+Prompt 1: Output 505 tokens 4.0s 126.17 t/s
+
+Prompt 2: Output 703 tokens 5.5s 128.71 t/s
+
+Prompt 3: Output 791 tokens 6.3s 125.95 t/s
+
+VRAM used: 15.6 GB
+
+##### 128 KTok Context
+
+Prompt 1: Output 564 tokens 5.6s 100.48 t/s
+
+Prompt 2: Output 669 tokens 6.8s 98.31 t/s
+
+Prompt 3: Output 776 tokens 8.6s 89.96 t/s
+
+There is already an offloading happening from the memory. Slight reduction in throughput after each prompt.
+
+##### 256KTok Context - Offloading MOE
+
+I did not run the 256KTok because we already knows that the KVCache offloading on the CPU/Mem will kill the performance.
+
+###### 8 MOE
+
+```bash
+llama-server 
+-m ..\Qwen3.6-35B-A3B-UD-IQ3_S.gguf 
+-ngl 99 
+--ctx-size 262144 
+--temp 0.7 --min-p 0.0 --top-p 0.80 --top-k 20 
+--repeat-penalty 1.00 --presence-penalty 1.5 
+--chat-template-kwargs "{\"enable_thinking\":false}" 
+-fa on  --cache-type-k q4_0 --cache-type-v q4_0 
+-np 1
+--spec-type draft-mtp --spec-draft-n-max 1
+--n-cpu-moe 8
+```
+
+Prompt 1: Output 550 tokens 6.7s 82.45 t/s
+
+Prompt 2: Output 1,126 tokens 12s 86.93 t/s
+
+Prompt 3: Output 753 tokens 8.9s 84.96 t/s
+
+VRAM Used: 15.3 GB
+
+It is already a bit borderline for the VRAM used, actually the throughput of the No MTP version with less offloading of MOE is a tiny bit faster.
+
+###### 6 MOE
+
+Trying to push further
+
+Prompt 1: Output 641 tokens 7.7s 83.03 t/s
+
+Prompt 2: Output 1,074 tokens 12s 84.47 t/s
+
+Prompt 3: Output 739 tokens 8.9s 83.27 t/s
+
+VRAM Used: 15.6
+
+We are passed the threshold, it is a bit too much and the throughput starts to degrade.
+
+#### MTP 2
+
+```bash
+llama-server 
+-m ..\Qwen3.6-35B-A3B-UD-IQ3_S.gguf 
+-ngl 99 --ctx-size 32768 
+--temp 0.7 --min-p 0.0 --top-p 0.80 --top-k 20 
+--repeat-penalty 1.00 --presence-penalty 1.5 
+--chat-template-kwargs "{\"enable_thinking\":false}" 
+-fa on  --cache-type-k q4_0 --cache-type-v q4_0 -np 1 
+--spec-type draft-mtp --spec-draft-n-max 2
+```
+
+Prompt 1: Output 587 tokens 4.9s 119.97 t/s
+
+Prompt 2: Output 1,024 tokens 7.9s 128.81 t/s
+
+Prompt 3: Output 851 tokens 6.8s 125.20 t/s
+
+VRAM used: 15.6 GB
+
+##### 128 KTok Context
+
+Just a validation run to see the throughput drop
+
+Prompt 1: Output 636 tokens 6.7s 94.42 t/s
+
+Prompt 2: Output 941 tokens 10s 89.19 t/s
+
+Prompt 3: Output 732 tokens 8.6s 84.68 t/s
+
+No change, KVCache offloaded on CPU/MEM slight throughput reduction
+
+I did not run the offloading of MOE because we already know the trend with the previous experiments.
+
+#### Observations
+
+Similar in some ways to the 4Bit Quant experiment, to maximize the throughput for this model, I would suggest to keep the KV Cache fully in VRAM and offload the minimum number of layers on the CPU/MEM. The 3bit quant is a bit faster because we can put more KV Cache on the VRAM and reduce a bit further the offloading to the CPU/MEM. The throughput is very descent even with 128K and 256K Tokens.
+
 ## Ornith 1.0 35B
 
 ```bash
@@ -798,7 +1159,7 @@ These comparisons are based on my earlier M4 experiments using comparable model/
 
 Perhaps the biggest surprise was that even the Qwen 3.6 27B reasoning model remained usable at around 34 tokens/s and with MTP around 45 tokens/s. While not as fast as the sparse A3B models, it is responsive enough that reasoning no longer feels like a bottleneck.
 
-These results suggest that 16 GB GPUs can be a practical sweet spot for local inference, particularly when using aggressively quantized MoE models. A single mid-range consumer GPU is now sufficient to run several state-of-the-art sparse models at highly interactive speeds.
+These results suggest that 16 GB GPUs can be a practical sweet spot for local inference, particularly when using aggressively quantized MoE models. A single mid-range consumer GPU is now sufficient to run several state-of-the-art sparse models at highly interactive speeds. 16 GB is an excellent entry point, but 16 GB is also exactly where dense-model inference starts becoming constrained by the boundary between GPU memory and system memory.
 
 # ChangeLog
 
@@ -831,3 +1192,11 @@ These results suggest that 16 GB GPUs can be a practical sweet spot for local in
 04/08/2026
 
 - Additional experiments with offloading with MOE and MTP
+
+07/08/2026
+
+- Experiment with offloading with Qwen 3.6 27B Dense and MTP
+
+10/08/2026
+
+- Add Qwen 3.6 35B A3B in 3bit quant
