@@ -1244,6 +1244,85 @@ VRAM used: 7.6 GB
 
 MTP does not automatically improve throughput.
 
+## Muse-Glimmer-30B
+
+I used the Unsloth variant in Muse-Glimmer-30B-UD-Q3_K_XL.gguf, the thinking mode is active, so it uses slightly more tokens and it has more latency.
+
+```bash
+llama-server 
+-m ..\Muse-Glimmer-30B-UD-Q3_K_XL.gguf  
+--ctx-size 32768 
+--temp 1.0 --top-p 0.95 --top-k 64  
+-fa on  
+--cache-type-k q4_0 --cache-type-v q4_0 
+--n-gpu-layers all --n-gpu-layers-draft all 
+--spec-type draft-dflash --spec-draft-p-min 0.2 --spec-draft-n-min 0 --spec-draft-n-max 3 
+--parallel 1 --jinja
+```
+
+Prompt 1: Output 949 tokens, 33s, 28.21 t/s
+
+Prompt 2: Output 1,011 tokens, 36s, 27.66 t/s
+
+Prompt 3: Output 674 tokens, 24s, 27.23 t/s
+
+VRAM used: 12.6 GB
+
+It means there a big margin on the size of the context.
+
+I will wait a bit to retry it further because the software is pretty new and it needs to mature a bit.
+
+
+## NVIDIA-Nemotron-3.5-Lightning-30B-A3B-GGUF
+
+I used the Bartowski variant in 4-bit IQ4\_XS for this one. We do some CPU/MEM offloading to retain most of its capabilities. The Bartowski variant also supports MTP if needed.Burst Mode
+
+Burst mode with a small context and minimal offloading, I get around **95 tok/s**:
+
+```bash
+llama-server.exe 
+-hf bartowski/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-GGUF:IQ4_XS 
+-ngl 99  -np 1 
+--cache-type-k q4_0 --cache-type-v q4_0 
+--temp 0.6 --top-p 0.95  --min-p 0.01 
+-c 32768 
+--n-cpu-moe 8 --reasoning off
+```
+
+Another Burst Mode variant gives around **90 tok/s**, with slightly more offloading:
+
+```bash
+llama-server.exe 
+-hf bartowski/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-GGUF:IQ4_XS 
+-ngl 99  --jinja -np 1 
+--cache-type-k q4_0 --cache-type-v q4_0 --temp 1.0 --top-p 0.95 
+-c 32768 --n-cpu-moe 10
+```
+
+Larger context 256 KToken:
+
+```bash
+llama-server.exe 
+-hf bartowski/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-GGUF:IQ4_XS 
+-ngl 99  
+--jinja -np 1 
+--cache-type-k q4_0 --cache-type-v q4_0 
+--temp 1.0 --top-p 0.95 -c 262144 
+--n-cpu-moe 13
+```
+
+Burst Mode: 85 tok/s
+
+With 112K Context: 54 tok/s
+
+VRAM used in previous experiments: 15.4 to 15.5 GB
+
+It behaves similarly to other MoE models of this size. MTP does not provide additional throughput on this hardware because the model is already partially offloaded to CPU/MEM.
+
+The throughput is decent, and I find it to be an interesting model. It is very comparable to the Qwen 3.6 35B-A3B.
+
+What I find particularly interesting is that it remains quite fast for a 4-bit model with offloading. I will probably experiment with it further.
+
 ---
 
 # 15. Models and Files Tested
@@ -1292,7 +1371,15 @@ The bartowski-provided model was used.
 
 The model was provided by empero-ai.
 
+## Muse-Glimmer 30B
+
+- `Muse-Glimmer-30B-UD-Q3_K_XL.gguf`
+
 ---
+
+## NVIDIA-Nemotron-3.5-Lightning-30B-A3B
+
+- `bartowski/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-GGUF:IQ4_XS`
 
 # 16. Practical Recommendations
 
@@ -1473,3 +1560,11 @@ A single mid-range consumer GPU is now sufficient to run several state-of-the-ar
 **10/08/2026**
 
 * Added Qwen 3.6 35B A3B in 3-bit quantization
+
+**11/08/2026**
+
+- Added Muse Gleemer in 3-bit quantization
+
+**12/08/2026**
+
+- Added NVIDIA Nemotron 3.5 Lightning 30B A3B
