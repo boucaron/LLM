@@ -1096,7 +1096,6 @@ For CPU-offloaded Qwen3.6-35B-A3B IQ4\_NL, MTP provides little additional benefi
 
 ---
 
-
 # 14 Qwen 3.8 27B
 
 Early Test Date: 15/08/2026
@@ -1205,7 +1204,7 @@ This is only preliminary, but it already means that this is very usable in 3-bit
 
 ## 4-bit quantization
 
-I performed a quick test, but I did not use any offloading for the moment, so the numbers are pretty low. This testing is not finished yet.
+We are testing a 4-bit quantization that is really at the limit or above what the 16 GB can handle.
 
 ### Very early test
 
@@ -1224,7 +1223,109 @@ Too big for the GPU.
 
 9 tokens/s
 
-**→ Forthcoming experiments:** I will use partial offloading of the model to keep the full KV cache on the GPU, as I did with Qwen 3.6 27B. This should help.
+### Offloading Model
+
+### 51 layers
+
+```bash
+llama-server -m ..\Qwen3.8-27B-IQ4_NL.gguf
+--ctx-size 32768 -fa on
+--cache-type-k q4_0 --cache-type-v q4_0
+--parallel 1
+--temp 1.0 --top-p 0.95 --top-k 20 --min-p 0.0
+--presence-penalty 0.0 --repeat-penalty 1.0
+-ngl 51
+
+```
+
+Throughput 8 to 9 tokens/s
+
+VRAM Used 12.8 GB
+
+### 59 layers
+
+```bash
+llama-server -m ..\Qwen3.8-27B-IQ4_NL.gguf
+--ctx-size 32768 -fa on
+--cache-type-k q4_0 --cache-type-v q4_0
+--parallel 1
+--temp 1.0 --top-p 0.95 --top-k 20 --min-p 0.0
+--presence-penalty 0.0 --repeat-penalty 1.0
+-ngl 59
+```
+
+Throughput 12 to 13 tokens/s
+
+VRAM Used 14.6 GB
+
+### 62 Layers
+
+llama-server -m ..\Qwen3.8-27B-IQ4_NL.gguf
+--ctx-size 32768 -fa on
+--cache-type-k q4_0 --cache-type-v q4_0
+--parallel 1
+--temp 1.0 --top-p 0.95 --top-k 20 --min-p 0.0
+--presence-penalty 0.0 --repeat-penalty 1.0
+-ngl 59
+
+Throughput 15 to 16 tokens/s
+
+VRAM Used 15.3 GB
+
+### 59 Layers MTP 1 Way
+
+```bash
+llama-server -m ..\Qwen3.8-27B-IQ4_NL.gguf
+--ctx-size 32768 -fa on
+--cache-type-k q4_0 --cache-type-v q4_0
+--parallel 1
+--temp 1.0 --top-p 0.95 --top-k 20 --min-p 0.0
+--presence-penalty 0.0 --repeat-penalty 1.0
+-ngl 59 --spec-type draft-mtp --spec-draft-n-max 1
+```
+
+Throughput 18 to 19 tokens/s
+
+VRAM Used 15.2 GB
+
+### 59 Layers MTP 2 Way
+
+```bash
+llama-server -m ..\Qwen3.8-27B-IQ4_NL.gguf
+--ctx-size 32768 -fa on
+--cache-type-k q4_0 --cache-type-v q4_0
+--parallel 1
+--temp 1.0 --top-p 0.95 --top-k 20 --min-p 0.0
+--presence-penalty 0.0 --repeat-penalty 1.0
+-ngl 59 --spec-type draft-mtp --spec-draft-n-max 2
+```
+
+Throughput 20 to 22 tokens/s
+
+VRAM Used 15.3 GB
+
+
+### 62 Layers MTP 1 Way
+
+```bash
+llama-server -m ..\Qwen3.8-27B-IQ4_NL.gguf
+--ctx-size 32768 -fa on
+--cache-type-k q4_0 --cache-type-v q4_0
+--parallel 1
+--temp 1.0 --top-p 0.95 --top-k 20 --min-p 0.0
+--presence-penalty 0.0 --repeat-penalty 1.0
+-ngl 62 --spec-type draft-mtp --spec-draft-n-max 1
+```
+
+Throughput 19 to 22 tokens/s
+
+VRAM Used 15.5 GB
+
+A bit of memory offloading we are on the edge.
+
+### Observations
+
+Pretty similar behaviour like the Qwen 3.6 27B in 4-bits quantization. MTP enables additional throughput, with the offloading and the MTP together we achieved around 20 tokens/s in burst mode.
 
 
 # 15. Other Tested Models
