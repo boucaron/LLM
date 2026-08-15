@@ -140,7 +140,9 @@ During testing, the CPU was never the limiting factor.
 
 * Windows 11 25H2
 * NVIDIA Studio Driver 610.62 (CUDA 13)
+  * **Important**: The GPU is deliberately kept quiet and is thermally limited to around 60 °C, so the GPU will throttle rather aggressively once it reaches this temperature. These results therefore prioritize a quiet, sustained local-LLM experience rather than maximum possible throughput. Linux, Game Ready drivers, higher power limits, or a higher thermal target should produce higher numbers.
 * llama.cpp b10069 (CUDA 13.3)
+* llama-b10360 (CUDA 13.3) starting from Muse Gleemer
 
 ## Methodology
 
@@ -1094,7 +1096,138 @@ For CPU-offloaded Qwen3.6-35B-A3B IQ4\_NL, MTP provides little additional benefi
 
 ---
 
-# 14. Other Tested Models
+
+# 14 Qwen 3.8 27B
+
+Early Test Date: 15/08/2026
+
+I would say this is a model that nearly all local LLM nerds have been waiting for, and it does not disappoint.
+
+I used the following Unsloth variants:
+
+* Qwen3.8-27B-IQ4\_NL
+* Qwen3.8-27B-Q3\_K\_M
+
+## 3-bit quantization
+
+I performed a few quick tests. I have not yet done extensive testing across different context sizes and model variants.
+
+Thinking mode is enabled by default, and it can be disabled with `--reasoning off` (if not set, reasoning is on).
+
+### No MTP
+
+```
+llama-server 
+-m ..\Qwen3.8-27B-Q3_K_M.gguf 
+--ctx-size 32768 -fa on  
+--cache-type-k q4_0 --cache-type-v q4_0 
+--n-gpu-layers all --parallel 1 
+--temp 1.0 --top-p 0.95 --top-k 20 
+--min-p 0.0 --presence-penalty 0.0 --repeat-penalty 1.0
+```
+
+Prompts with the 3 classic questions, one after another: 25 tokens/s
+
+VRAM used: 14 GB
+
+### MTP 1 Way
+
+```
+llama-server -m ..\Qwen3.8-27B-Q3_K_M.gguf
+--ctx-size 32768 -fa on  
+--cache-type-k q4_0 --cache-type-v q4_0 
+--n-gpu-layers all --parallel 1 
+--temp 1.0 --top-p 0.95 --top-k 20 
+--min-p 0.0 --presence-penalty 0.0 --repeat-penalty 1.0 
+--spec-type draft-mtp --spec-draft-n-max 1
+```
+
+Prompts with the 3 classic questions, one after another: 32 to 35 tokens/s
+
+VRAM used: 14.5 GB
+
+## MTP 2 Way
+
+```
+llama-server -m ..\Qwen3.8-27B-Q3_K_M.gguf
+--ctx-size 32768 -fa on  
+--cache-type-k q4_0 --cache-type-v q4_0 
+--n-gpu-layers all --parallel 1 
+--temp 1.0 --top-p 0.95 --top-k 20 
+--min-p 0.0 --presence-penalty 0.0 --repeat-penalty 1.0 
+--spec-type draft-mtp --spec-draft-n-max 2
+```
+
+Prompts with the 3 classic questions, one after another: 35 to 42 tokens/s
+
+VRAM used: 14.7 GB
+
+### MTP 3 Way
+
+```
+llama-server -m ..\Qwen3.8-27B-Q3_K_M.gguf
+--ctx-size 32768 -fa on  
+--cache-type-k q4_0 --cache-type-v q4_0 
+--n-gpu-layers all --parallel 1 
+--temp 1.0 --top-p 0.95 --top-k 20 
+--min-p 0.0 --presence-penalty 0.0 --repeat-penalty 1.0 
+--spec-type draft-mtp --spec-draft-n-max 3
+```
+
+Prompts with the 3 classic questions, one after another: 33 to 40 tokens/s (large swings in throughput)
+
+VRAM used: 14.8 GB
+
+### Chat/Instruct Mode
+
+```
+llama-server -m ..\Qwen3.8-27B-Q3_K_M.gguf 
+--ctx-size 32768 -fa on  
+--cache-type-k q4_0 --cache-type-v q4_0 
+--n-gpu-layers all --parallel 1 
+--temp 0.7 --top-p 0.80 --top-k 20 --min-p 0.0 --presence-penalty 1.5 --repeat-penalty 1.0 
+--spec-type draft-mtp --spec-draft-n-max 2 --reasoning off
+```
+
+Similar behavior in terms of memory usage and throughput. The answers are a similar length to Qwen 3.6 27B, so this is a good mode for interactive use.
+
+## Observations
+
+The default thinking effort is **very high**, and it burns a lot of tokens. Even for a relatively short question and a small context, let's say around 1K tokens, at some point I had about 7.6K tokens of thinking and answer combined. I mean, this is big—you need to have enough context.
+
+Hopefully, it is possible to play with the template and tune the effort. This is a cool feature.
+
+For the chat/instruct mode, the latency is low, and the length of the answers is similar to Qwen 3.6 27B.
+
+MTP seems to have improved a lot. The throughput reduction is less abrupt when you increase the amount of speculation. On short bursts, MTP-wise, moving from 1 to 3 gave me about a 40–60% increase in token throughput during inference.
+
+This is only preliminary, but it already means that this is very usable in 3-bit. The best 3-bit quantization variant will of course depend on the context size.
+
+## 4-bit quantization
+
+I performed a quick test, but I did not use any offloading for the moment, so the numbers are pretty low. This testing is not finished yet.
+
+### Very early test
+
+```
+llama-server -m ..\Qwen3.8-27B-IQ4_NL.gguf 
+--ctx-size 32768 -fa on  
+--cache-type-k q4_0 --cache-type-v q4_0 
+--n-gpu-layers all --parallel 1 
+--temp 1.0 --top-p 0.95 --top-k 20 --min-p 0.0 
+--presence-penalty 0.0 --repeat-penalty 1.0
+```
+
+Too big for the GPU.
+
+700 MB already spilled over to CPU memory.
+
+9 tokens/s
+
+**→ Forthcoming experiments:** I will use partial offloading of the model to keep the full KV cache on the GPU, as I did with Qwen 3.6 27B. This should help.
+
+
+# 15. Other Tested Models
 
 ## Ornith 1.0 35B
 
@@ -1271,7 +1404,6 @@ VRAM used: 12.6 GB
 It means there a big margin on the size of the context.
 
 I will wait a bit to retry it further because the software is pretty new and it needs to mature a bit.
-
 
 ## NVIDIA-Nemotron-3.5-Lightning-30B-A3B-GGUF
 
@@ -1568,3 +1700,7 @@ A single mid-range consumer GPU is now sufficient to run several state-of-the-ar
 **12/08/2026**
 
 - Added NVIDIA Nemotron 3.5 Lightning 30B A3B
+
+**15/08/2026**
+
+- Added Qwen 3.8 27B in 4 and 3-bit quantization
