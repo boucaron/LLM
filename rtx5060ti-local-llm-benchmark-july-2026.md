@@ -1199,7 +1199,7 @@ Hopefully, it is possible to play with the template and tune the effort. This is
 
 For the chat/instruct mode, the latency is low, and the length of the answers is similar to Qwen 3.6 27B.
 
-MTP seems to have improved a lot. The throughput reduction is less abrupt when you increase the amount of speculation. On short bursts, MTP-wise, moving from 1 to 3 gave me about a 40–60% increase in token throughput during inference.
+MTP also seems to have improved compared with Qwen 3.6. The throughput gain remains strong when increasing the speculation depth, with MTP-2 currently looking like the sweet spot. MTP-3 is still faster than the baseline, but shows larger fluctuations. This may indicate improvements in the MTP routing/acceptance behavior, although more testing is needed to confirm this.
 
 This is only preliminary, but it already means that this is very usable in 3-bit. The best 3-bit quantization variant will of course depend on the context size.
 
