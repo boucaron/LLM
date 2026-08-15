@@ -1451,7 +1451,7 @@ VRAM used in previous experiments: 15.4 to 15.5 GB
 
 It behaves similarly to other MoE models of this size. MTP does not provide additional throughput on this hardware because the model is already partially offloaded to CPU/MEM.
 
-The throughput is decent, and I find it to be an interesting model. It is very comparable to the Qwen 3.6 35B-A3B.
+The throughput is decent, and I find it to be an interesting model. It behaves similarly on the tuning settings to the recipes for the Qwen 3.6 35B-A3B.
 
 What I find particularly interesting is that it remains quite fast for a 4-bit model with offloading. I will probably experiment with it further.
 
