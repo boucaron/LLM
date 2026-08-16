@@ -1293,17 +1293,32 @@ Similar behavior in terms of memory usage and throughput. The answers are a simi
 
 ### Observations
 
-The default thinking effort is **very high**, and it burns a lot of tokens. Even for a relatively short question and a small context, let's say around 1K tokens, at some point I had about 7.6K tokens of thinking and answer combined. I mean, this is big—you need to have enough context.
+The default thinking effort is **very high**, and it can consume a lot of tokens. Even for a relatively short question with a small context—around 1K tokens—I observed cases where the thinking and answer combined reached about **7.6K tokens**. That's substantial, so having enough context available is important.
 
-Hopefully, it is possible to play with the template and tune the effort. This is a cool feature.
+Hopefully, it will be possible to tune the reasoning effort through the template. This is a nice feature, but the default effort may be excessive for many use cases.
 
-For the chat/instruct mode, the latency is low, and the length of the answers is similar to Qwen 3.6 27B.
+In **chat/instruct mode**, latency is low and the response length is similar to **Qwen3.6 27B**, making it a good option for interactive use.
 
-MTP also seems to have improved compared with Qwen 3.6. The throughput gain remains strong when increasing the speculation depth, with MTP-2 currently looking like the sweet spot. MTP-3 is still faster than the baseline, but shows larger fluctuations. This may indicate improvements in the MTP routing/acceptance behavior, although more testing is needed to confirm this.
+**MTP also seems to have improved compared with Qwen3.6.** The throughput gain is significant with MTP-1 and MTP-2, with **MTP-2 currently looking like the sweet spot**. MTP-3 does not provide a meaningful advantage over MTP-2 and shows larger throughput fluctuations, so I don't think it's worth spending more time testing its behavior at larger context sizes.
 
-This is only preliminary, but it already means that this is very usable in 3-bit. The best 3-bit quantization variant will of course depend on the context size.
+These results are still preliminary, but they already show that **Qwen3.8-27B is very usable in 3-bit**. The best quantization will, of course, depend on the target context size.
 
-In the experiments, the model Qwen3.8-27B-Q3_K_M.gguf is good up to 64 KTok of context with a MTP 2 Way with a throughput in inference starting around 39 tokens/s going down to 29 tokens/s when the context is nearly full: this is very usable, especially for such a dense model. You can push a 96 KTok of context without MTP, then the throughput starts around 25 tokens/s going down to 16 tokens/s when the context is nearly full: it is on the slow side but still acceptable.
+In these tests, **Qwen3.8-27B-Q3\_K\_M.gguf with MTP-2 is a very good fit for up to 64K context**. Inference starts at around **39 tok/s** and drops to about **29 tok/s** as the context approaches its limit. That's very usable, especially for such a dense model.
+
+Without MTP, the model can be pushed to **96K context**, with throughput starting around **25 tok/s** and dropping to about **16 tok/s** near the limit. That's on the slow side, but still usable.
+
+
+| Configuration         | Context | Speed                  | VRAM        | Verdict                         |
+| --------------------- | ------- | ---------------------- | ----------- | ------------------------------- |
+| No MTP                | 32K     | \~25 tok/s             | 14 GB       | Baseline                        |
+| No MTP                | 64K     | 25 → 19 tok/s         | 14.8 GB     | Good                            |
+| No MTP                | 96K     | 25 → 16 tok/s         | 15.6 GB     | Usable, but slow                |
+| MTP-1                 | 64K     | 32–35 → 28 tok/s     | 15.6 GB     | Good                            |
+| **MTP-2**             | **64K** | **33–39 → 29 tok/s** | **15.6 GB** | **Best balance**                |
+| MTP-3                 | 32K     | 33–40 tok/s           | 14.8 GB     | No clear benefit; more variable |
+| Chat/Instruct + MTP-2 | 32K     | Similar to MTP-2       | Similar     | **Best for interactive use**    |
+
+Overall, **64K + MTP-2 looks like the best practical configuration** from these initial tests.
 
 ## Q3_K_S
 
@@ -1519,7 +1534,6 @@ We are still on the edge but the throughput reduction is lower when the context 
 There is no real winner there for the MTP 2 ways: for larger context it is better to stick to a MTP 1 way that has the same throughput and allows to have a bit more context.
 
 
-
 | Configuration | Context  | Initial tok/s | \~100K context tok/s | VRAM / Offload       | Takeaway                                                 |
 | ------------- | -------- | ------------- | -------------------- | -------------------- | -------------------------------------------------------- |
 | **No MTP**    | 96K      | 26            | 18                   | 14.6 GB / 300 MB     | Good baseline, but lower throughput                      |
@@ -1658,9 +1672,6 @@ Memory offloading we are above the edge, when the context starts to fill in the 
 Pretty similar behaviour like the Qwen 3.6 27B in 4-bits quantization. MTP enables additional throughput, with the offloading and the MTP together we achieved around 20 tokens/s in burst mode.
 
 
-### 4-bit Quantization — Qwen3.8 27B IQ4\_NL
-
-
 | Configuration     | VRAM    | Throughput       | Notes                           |
 | ----------------- | ------- | ---------------- | ------------------------------- |
 | All layers        | >16 GB  | \~9 tok/s        | \~700 MB spilled to CPU         |
@@ -1670,7 +1681,6 @@ Pretty similar behaviour like the Qwen 3.6 27B in 4-bits quantization. MTP enabl
 | 59 layers + MTP 1 | 15.2 GB | 18–19 tok/s     | Significant MTP gain            |
 | 59 layers + MTP 2 | 15.3 GB | **20–22 tok/s** | Best overall result             |
 | 62 layers + MTP 1 | 15.6 GB | 19–22 tok/s     | Highest VRAM usage              |
-
 
 The **Qwen3.8 27B IQ4\_NL** 4-bit quantization is at, or slightly beyond, the practical limit of a **16 GB GPU** at a 32K context. Fully offloading the model causes around **700 MB to spill into CPU memory**, reducing performance to roughly **9 tok/s**.
 
@@ -1839,7 +1849,6 @@ This is also a sweet spot, it does not change really when using MTP 1 or MTP 2 w
 #### Observations
 
 
-
 | Mode      |  Context |             Generation |                Prefill |        VRAM |     Offload | Notes                              |
 | --------- | -------: | ---------------------: | ---------------------: | ----------: | ----------: | ---------------------------------- |
 | No MTP    |     128K |               31 tok/s |            \~610 tok/s |     13.6 GB |      300 MB | Good baseline                      |
@@ -1934,7 +1943,6 @@ VRAM used @ 199  KTokens : 15.2 GB ( 600 MB Offloaded)
 #### Observations
 
 I did not run without MTP those tests, this model keeps the throughput high even when we reach the majority of the context. It can run in 220KToc without any issue, there is no real gain to run above MTP with one way. There is a bit margin to put few more tokens but that is already on the limit.
-
 
 
 | Configuration | Context | Classic Qs |   Prefill | Inference |    VRAM |
