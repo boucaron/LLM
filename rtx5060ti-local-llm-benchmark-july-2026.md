@@ -2243,6 +2243,14 @@ The model was provided by empero-ai.
 
 - `bartowski/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-GGUF:IQ4_XS`
 
+## Qwen 3.8 27B
+
+* `Qwen3.8-27B-IQ4_NL`
+* `Qwen3.8-27B-Q3_K_M`
+* `Qwen3.8-27B-Q3_K_S`
+* `Qwen3.8-27B-UD-Q2_K_XL`
+* `Qwen3.8-27B-UD-IQ2_XXS`
+
 # 16. Practical Recommendations
 
 After all these experiments, a few rules stand out.
@@ -2284,7 +2292,7 @@ Once CPU offloading becomes the dominant bottleneck, the benefit becomes much sm
 
 ### 5. A slightly smaller quantization can be better than expected
 
-Moving from 4-bit to 3-bit is not only about making the model fit.
+Moving from 4-bit to 3-bit or down to 2-bit is not only about making the model fit.
 
 The additional VRAM headroom can be converted into:
 
