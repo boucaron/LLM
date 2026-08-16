@@ -1434,7 +1434,7 @@ VRAM used @ 101.8 KTokens : 15.5 GB (400 MB Offloaded)
 
 #### Observations
 
-The sweat spot for the max Context capacity for this specific model using a MTP 1 way is the 112 KTok Context variant. It starts at 35 tokens/s and finish around 23 tokens/s, this is not fast but usable.
+The sweet spot for the max Context capacity for this specific model using a MTP 1 way is the 112 KTok Context variant. It starts at 35 tokens/s and finish around 23 tokens/s, this is not fast but usable.
 
 ### MTP 2 Way
 
@@ -1784,7 +1784,6 @@ VRAM used @ 100.5 KTokens : 14.3 GB ( 500 MB Offloaded)
 
 #### 172 KToc
 
-
 Prompts with the 3 classic questions, one after another: 39-42 tokens/s
 
 VRAM used:  15.4 GB (500 MB Offloaded)
@@ -1803,7 +1802,72 @@ This is also a sweet spot, it does not change really when using MTP 1 or MTP 2 w
 
 This is the smallest possible one, for sure less capable than the other quantization.
 
-TODO
+#### MTP 2 Ways
+
+##### 192 KToc
+
+Prompts with the 3 classic questions, one after another: 42-57 tokens/s
+
+VRAM used:  14.7 GB (600 MB Offloaded)
+
+Prompts additional 120 Ktokens context: prefill about 440 tokens/s, inference 21 tokens/s
+
+VRAM used @ 151.3 KTokens : 14.7 GB ( 600 MB Offloaded)
+
+##### 220 KToc
+
+```bash
+llama-server 
+-m ..\Qwen3.8-27B-UD-IQ2_XXS.gguf  
+--ctx-size 220000 -fa on  --cache-type-k q4_0 --cache-type-v q4_0 
+--n-gpu-layers all --parallel 1 
+--temp 1.0 --top-p 0.95 --top-k 20 --min-p 0.0 
+--presence-penalty 0.0 --repeat-penalty 1.0 
+--spec-type draft-mtp --spec-draft-n-max 2
+```
+
+Prompts with the 3 classic questions, one after another: 42-46 tokens/s
+
+VRAM used:  15.3 GB (600 MB Offloaded)
+
+Prompts additional 80 Ktokens context: prefill about 507 tokens/s, inference 25 tokens/s
+
+VRAM used @ 104 KTokens : 15.3 GB ( 600 MB Offloaded)
+
+Prompts additional 80 Ktokens context: prefill about 317 tokens/s, inference 18 tokens/s
+
+VRAM used @ 202.7 KTokens : 15.3 GB ( 600 MB Offloaded)
+
+#### MTP 1 Way
+
+##### 220 KToc
+
+````bash
+llama-server 
+-m ..\Qwen3.8-27B-UD-IQ2_XXS.gguf  
+--ctx-size 220000 -fa on  --cache-type-k q4_0 --cache-type-v q4_0 
+--n-gpu-layers all --parallel 1 
+--temp 1.0 --top-p 0.95 --top-k 20 --min-p 0.0 
+--presence-penalty 0.0 --repeat-penalty 1.0 
+--spec-type draft-mtp --spec-draft-n-max 1
+
+````
+
+Prompts with the 3 classic questions, one after another: 40-43 tokens/s
+
+VRAM used:  15.2 GB (600 MB Offloaded)
+
+Prompts additional 80 Ktokens context: prefill about 517 tokens/s, inference 25 tokens/s
+
+VRAM used @ 104 KTokens : 15.2 GB ( 600 MB Offloaded)
+
+Prompts additional 80 Ktokens context: prefill about 324 tokens/s, inference 18 tokens/s
+
+VRAM used @ 199  KTokens : 15.2 GB ( 600 MB Offloaded)
+
+#### Observations
+
+I did not run without MTP those tests, this model keeps the throughput high even when we reach the majority of the context. It can run in 220KToc without any issue, there is no real gain to run above MTP with one way. There is a bit margin to put few more tokens but that is already on the limit.
 
 # 15. Other Tested Models
 
