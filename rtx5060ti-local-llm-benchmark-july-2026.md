@@ -1098,7 +1098,7 @@ For CPU-offloaded Qwen3.6-35B-A3B IQ4\_NL, MTP provides little additional benefi
 
 # 14 Qwen 3.8 27B
 
-Early Test Date: 15/08/2026
+Test Dates: 15-16/08/2026
 
 I would say this is a model that nearly all local LLM nerds have been waiting for, and it does not disappoint.
 
@@ -1107,6 +1107,8 @@ I used the following Unsloth variants:
 * Qwen3.8-27B-IQ4\_NL
 * Qwen3.8-27B-Q3\_K\_M
 * Qwen3.8-27B-Q3\_K\_S
+* Qwen3.8-27B-UD-Q2_K_XL
+* Qwen3.8-27B-UD-IQ2_XXS
 
 ## Q3\_K\_M quantization
 
@@ -1434,7 +1436,6 @@ VRAM used @ 101.8 KTokens : 15.5 GB (400 MB Offloaded)
 
 The sweat spot for the max Context capacity for this specific model using a MTP 1 way is the 112 KTok Context variant. It starts at 35 tokens/s and finish around 23 tokens/s, this is not fast but usable.
 
-
 ### MTP 2 Way
 
 #### 96 KTok Context
@@ -1640,6 +1641,169 @@ Memory offloading we are above the edge, when the context starts to fill in the 
 ### Observations
 
 Pretty similar behaviour like the Qwen 3.6 27B in 4-bits quantization. MTP enables additional throughput, with the offloading and the MTP together we achieved around 20 tokens/s in burst mode.
+
+## 2-bits Quantization
+
+Of course, I could not resist to put more Context in the VRAM
+
+We use the following models there from Unsloth:
+
+- Qwen3.8-27B-UD-Q2_K_XL
+- Qwen3.8-27B-UD-IQ2_XXS.gguf
+
+### Q2_K_XL
+
+There is a large gap in the size between the Q3_K_S and this one. I want to check how much more context I can put on the GPU.
+
+### No MTP
+
+#### 128 KToc
+
+Prompts with the 3 classic questions, one after another: 31 tokens/s
+
+VRAM used:  13.6GB (300 MB Offloaded)
+
+Prompts additional 80 Ktokens context: prefill about 610 tokens/s, inference 18 tokens/s
+
+VRAM used @ 102.7 KTokens : 13.6 GB ( 300 MB Offloaded)
+
+#### 192 KToc
+
+Prompts with the 3 classic questions, one after another: 31 tokens/s
+
+VRAM used:  15.1GB (300 MB Offloaded)
+
+Prompts additional 80 Ktokens context: prefill about 610 tokens/s, inference 18 tokens/s
+
+VRAM used @ 102.1 KTokens : 15.1 GB ( 300 MB Offloaded)
+
+Prompts additional 40 Ktokens context: prefill about 410 tokens/s, inference 15 tokens/s
+
+VRAM used @ 151.6 KTokens : 15.1 GB ( 300 MB Offloaded)
+
+### 220 KToc
+
+```bash
+llama-server 
+-m ..\Qwen3.8-27B-UD-Q2_K_XL.gguf  
+--ctx-size 220000 -fa on  
+--cache-type-k q4_0 --cache-type-v q4_0 
+--n-gpu-layers all --parallel 1 
+--temp 1.0 --top-p 0.95 --top-k 20 --min-p 0.0 
+--presence-penalty 0.0 --repeat-penalty 1.0
+```
+
+I did not run the 256 KToc because there is more than 1.1 GB offloaded to the CPU/MEM and it will kill the throughput, instead I iterated to find the threshold and maximize the context while keeping the throughput.
+
+Prompts with the 3 classic questions, one after another: 30 tokens/s
+
+VRAM used:  15.5GB (400 MB Offloaded)
+
+Prompts additional 80 Ktokens context: prefill about 610 tokens/s, inference 18 tokens/s
+
+VRAM used @ 102.7 KTokens : 15.5 GB (400 MB Offloaded)
+
+Prompts additional 80 Ktokens context: prefill about 360 tokens/s, inference 13 tokens/s
+
+VRAM used @ 201.6 KTokens : 15.5 GB (400 MB Offloaded)
+
+### MTP 1 Way
+
+#### 128 KToc
+
+```bash
+llama-server
+ -m ..\Qwen3.8-27B-UD-Q2_K_XL.gguf  
+--ctx-size 131072 -fa on  
+--cache-type-k q4_0 --cache-type-v q4_0 
+--n-gpu-layers all --parallel 1 
+--temp 1.0 --top-p 0.95 --top-k 20 --min-p 0.0 
+--presence-penalty 0.0 --repeat-penalty 1.0 
+--spec-type draft-mtp --spec-draft-n-max 1
+```
+
+Prompts with the 3 classic questions, one after another: 42 tokens/s
+
+VRAM used:  14.2 GB (400 MB Offloaded)
+
+Prompts additional 80 Ktokens context: prefill about 570 tokens/s, inference 23 tokens/s
+
+VRAM used @ 102.1 KTokens : 14.3 GB ( 500 MB Offloaded)
+
+#### 172 KToc
+
+There was already a bit too much offloading at 196 KToc, so I found a good candidate to not reduce too much the throughput.
+
+```bash
+llama-server
+ -m ..\Qwen3.8-27B-UD-Q2_K_XL.gguf  
+--ctx-size 172000 -fa on  
+--cache-type-k q4_0 --cache-type-v q4_0 
+--n-gpu-layers all --parallel 1 
+--temp 1.0 --top-p 0.95 --top-k 20 --min-p 0.0 
+--presence-penalty 0.0 --repeat-penalty 1.0 
+--spec-type draft-mtp --spec-draft-n-max 1
+```
+
+Prompts with the 3 classic questions, one after another: 39-42 tokens/s
+
+VRAM used:  15.3 GB (500 MB Offloaded)
+
+Prompts additional 80 Ktokens context: prefill about 565 tokens/s, inference 23 tokens/s
+
+VRAM used @ 103.2 KTokens : 15.3 GB ( 500 MB Offloaded)
+
+Prompts additional 40 Ktokens context: prefill about 380 tokens/s, inference 20 tokens/s
+
+VRAM used @ 152.8 KTokens : 15.3 GB ( 500 MB Offloaded)
+
+This is the sweet spot for this model with this GPU, we have a large context and it is still having good throughput when the context is nearly full.
+
+### MTP 2 Ways
+
+#### 128 KToc
+
+```bash
+llama-server
+ -m ..\Qwen3.8-27B-UD-Q2_K_XL.gguf  
+--ctx-size 131072 -fa on  
+--cache-type-k q4_0 --cache-type-v q4_0 
+--n-gpu-layers all --parallel 1 
+--temp 1.0 --top-p 0.95 --top-k 20 --min-p 0.0 
+--presence-penalty 0.0 --repeat-penalty 1.0 
+--spec-type draft-mtp --spec-draft-n-max 2
+```
+
+Prompts with the 3 classic questions, one after another: 39-42 tokens/s
+
+VRAM used:  14.3 GB (500 MB Offloaded)
+
+Prompts additional 80 Ktokens context: prefill about 580 tokens/s, inference 24 tokens/s
+
+VRAM used @ 100.5 KTokens : 14.3 GB ( 500 MB Offloaded)
+
+#### 172 KToc
+
+
+Prompts with the 3 classic questions, one after another: 39-42 tokens/s
+
+VRAM used:  15.4 GB (500 MB Offloaded)
+
+Prompts additional 80 Ktokens context: prefill about 575 tokens/s, inference 23 tokens/s
+
+VRAM used @  101.1 KTokens : 15.4 GB ( 500 MB Offloaded)
+
+Prompts additional 40 Ktokens context: prefill about 375 tokens/s, inference 20 tokens/s
+
+VRAM used @ 152.1  KTokens : 15.4 GB ( 500 MB Offloaded)
+
+This is also a sweet spot, it does not change really when using MTP 1 or MTP 2 with such context. I would say may be use the MTP 1 in this context.
+
+### IQ2_XXS
+
+This is the smallest possible one, for sure less capable than the other quantization.
+
+TODO
 
 # 15. Other Tested Models
 
