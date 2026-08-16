@@ -1518,6 +1518,21 @@ We are still on the edge but the throughput reduction is lower when the context 
 
 There is no real winner there for the MTP 2 ways: for larger context it is better to stick to a MTP 1 way that has the same throughput and allows to have a bit more context.
 
+
+
+| Configuration | Context  | Initial tok/s | \~100K context tok/s | VRAM / Offload       | Takeaway                                                 |
+| ------------- | -------- | ------------- | -------------------- | -------------------- | -------------------------------------------------------- |
+| **No MTP**    | 96K      | 26            | 18                   | 14.6 GB / 300 MB     | Good baseline, but lower throughput                      |
+| **No MTP**    | 128K     | 25            | 16                   | 15.3 GB / 300 MB     | Maximum tested context, slower                           |
+| **MTP 1**     | 96K      | 35            | 24                   | 15.4 GB / 300 MB     | Strong performance                                       |
+| **MTP 1**     | **112K** | **35**        | **23**               | **15.5 GB / 400 MB** | **Best balance: large context + usable throughput**      |
+| **MTP 1**     | 128K     | 31            | 9                    | 15.6 GB / 800 MB     | Too much offloading; not recommended                     |
+| **MTP 2**     | 96K      | 39            | 23                   | 15.5 GB / 400 MB     | Fastest initially, but little advantage at large context |
+| **MTP 2**     | 112K     | 36            | 19                   | 15.4 GB / 700 MB     | More CPU/MEM traffic; worse than MTP 1                   |
+| **MTP 2**     | 106K     | 38            | 24                   | 15.4 GB / 500 MB     | Better than 112K, but still marginal                     |
+
+**Best overall: MTP 1 with a 112K context.** It provides the best balance for this setup, reaching about **23 tok/s at \~102K tokens** while keeping offloading relatively low. MTP 2 offers higher initial throughput, but its advantage disappears as the context grows.
+
 ## 4-bit quantization
 
 We are testing a 4-bit quantization that is really at the limit or above what the 16 GB can handle.
@@ -1641,6 +1656,29 @@ Memory offloading we are above the edge, when the context starts to fill in the 
 ### Observations
 
 Pretty similar behaviour like the Qwen 3.6 27B in 4-bits quantization. MTP enables additional throughput, with the offloading and the MTP together we achieved around 20 tokens/s in burst mode.
+
+
+### 4-bit Quantization — Qwen3.8 27B IQ4\_NL
+
+
+| Configuration     | VRAM    | Throughput       | Notes                           |
+| ----------------- | ------- | ---------------- | ------------------------------- |
+| All layers        | >16 GB  | \~9 tok/s        | \~700 MB spilled to CPU         |
+| 51 layers         | 12.8 GB | 8–9 tok/s       | Stable, significant CPU offload |
+| 59 layers         | 14.6 GB | 12–13 tok/s     | Good balance                    |
+| 62 layers         | 15.3 GB | 15–16 tok/s     | Near VRAM limit                 |
+| 59 layers + MTP 1 | 15.2 GB | 18–19 tok/s     | Significant MTP gain            |
+| 59 layers + MTP 2 | 15.3 GB | **20–22 tok/s** | Best overall result             |
+| 62 layers + MTP 1 | 15.6 GB | 19–22 tok/s     | Highest VRAM usage              |
+
+
+The **Qwen3.8 27B IQ4\_NL** 4-bit quantization is at, or slightly beyond, the practical limit of a **16 GB GPU** at a 32K context. Fully offloading the model causes around **700 MB to spill into CPU memory**, reducing performance to roughly **9 tok/s**.
+
+Increasing GPU offloading improves throughput significantly: from **8–9 tok/s at 51 layers** to **15–16 tok/s at 62 layers**, while using approximately **15.3 GB of VRAM**.
+
+**MTP provides the biggest additional performance improvement.** With 59 layers, throughput increases from 12–13 tok/s to **18–19 tok/s with MTP 1**, and **20–22 tok/s with MTP 2**, while remaining around 15.3 GB VRAM.
+
+Overall, the behaviour is very similar to the **Qwen3.6 27B 4-bit** tests. The combination of **aggressive GPU offloading + MTP** achieves around **20 tok/s in burst mode**, but memory offloading remains close to the edge. As the context fills, throughput begins to degrade somewhat faster.
 
 ## 2-bits Quantization
 
@@ -1798,6 +1836,34 @@ VRAM used @ 152.1  KTokens : 15.4 GB ( 500 MB Offloaded)
 
 This is also a sweet spot, it does not change really when using MTP 1 or MTP 2 with such context. I would say may be use the MTP 1 in this context.
 
+#### Observations
+
+
+
+| Mode      |  Context |             Generation |                Prefill |        VRAM |     Offload | Notes                              |
+| --------- | -------: | ---------------------: | ---------------------: | ----------: | ----------: | ---------------------------------- |
+| No MTP    |     128K |               31 tok/s |            \~610 tok/s |     13.6 GB |      300 MB | Good baseline                      |
+| No MTP    |     192K |         31 → 15 tok/s |     \~610 → 410 tok/s |     15.1 GB |      300 MB | Throughput drops after\~150K       |
+| No MTP    |     220K |         30 → 13 tok/s |     \~610 → 360 tok/s |     15.5 GB |      400 MB | \~202K usable, 256K not worthwhile |
+| MTP 1     |     128K |         42 → 23 tok/s |            \~570 tok/s |     14.3 GB | 400–500 MB | Best performance at 128K           |
+| **MTP 1** | **172K** | **39–42 → 20 tok/s** | **\~565 → 380 tok/s** | **15.3 GB** |  **500 MB** | **Sweet spot**                     |
+| MTP 2     |     128K |     39–42 → 24 tok/s |            \~580 tok/s |     14.3 GB |      500 MB | Similar to MTP 1                   |
+| MTP 2     |     172K |     39–42 → 20 tok/s |     \~575 → 375 tok/s |     15.4 GB |      500 MB | Essentially same as MTP 1          |
+
+##### Key Findings
+
+* **No MTP:** 220K context is usable, reaching about **202K tokens** with \~15.5 GB VRAM and only \~400 MB offloaded. However, inference throughput falls to around **13 tok/s** at very large context.
+* **MTP 1:** **172K context is the sweet spot**, reaching \~153K tokens while maintaining around **20 tok/s** inference and \~380 tok/s prefill.
+* **MTP 2:** Performance is almost identical to MTP 1 at large context sizes. At 172K, it reaches \~152K tokens with \~20 tok/s inference.
+* **128K context:** MTP provides a significant generation-speed improvement, reaching roughly **42 tok/s** for the initial benchmark versus **31 tok/s** without MTP.
+* **256K was not tested** because it caused more than **1.1 GB of CPU/RAM offloading**, which would significantly hurt throughput.
+
+##### Recommendation
+
+For this GPU, **MTP 1 with a 172K context** is the best overall configuration. It provides a large usable context while keeping throughput high enough for practical use. MTP 2 offers no meaningful advantage over MTP 1 at these larger context sizes, so **MTP 1 is preferable**.
+
+Overall, the Q2\_K\_XL model can handle **very large contexts**, but beyond roughly **150K tokens**, the main limitation becomes KV-cache pressure and the resulting throughput reduction rather than the model's nominal context limit.
+
 ### IQ2_XXS
 
 This is the smallest possible one, for sure less capable than the other quantization, but we can put a large context in it.
@@ -1868,6 +1934,20 @@ VRAM used @ 199  KTokens : 15.2 GB ( 600 MB Offloaded)
 #### Observations
 
 I did not run without MTP those tests, this model keeps the throughput high even when we reach the majority of the context. It can run in 220KToc without any issue, there is no real gain to run above MTP with one way. There is a bit margin to put few more tokens but that is already on the limit.
+
+
+
+| Configuration | Context | Classic Qs |   Prefill | Inference |    VRAM |
+| ------------- | ------: | ---------: | --------: | --------: | ------: |
+| MTP 2-way     |    151K | 42–57 t/s | \~440 t/s |  \~21 t/s | 14.7 GB |
+| MTP 2-way     |    104K | 42–46 t/s | \~507 t/s |  \~25 t/s | 15.3 GB |
+| MTP 2-way     |    203K | 42–46 t/s | \~317 t/s |  \~18 t/s | 15.3 GB |
+| MTP 1-way     |    104K | 40–43 t/s | \~517 t/s |  \~25 t/s | 15.2 GB |
+| MTP 1-way     |    199K | 40–43 t/s | \~324 t/s |  \~18 t/s | 15.2 GB |
+
+IQ2\_XXS is the smallest and least capable quantization tested, but its main advantage is its ability to handle a **very large context (\~220K tokens)** while maintaining surprisingly good throughput. MTP provides a modest speed benefit, especially at shorter contexts, but **2-way MTP offers little practical advantage over 1-way MTP** at very large context sizes. VRAM usage remains around **15 GB**, with \~600 MB offloaded.
+
+Overall, IQ2_XXS is a compelling option when **maximum context length and low VRAM usage are more important than model quality**. It can reach roughly 200K tokens of context without a dramatic collapse in inference speed.
 
 # 15. Other Tested Models
 
