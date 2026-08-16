@@ -1308,15 +1308,15 @@ In these tests, **Qwen3.8-27B-Q3\_K\_M.gguf with MTP-2 is a very good fit for up
 Without MTP, the model can be pushed to **96K context**, with throughput starting around **25 tok/s** and dropping to about **16 tok/s** near the limit. That's on the slow side, but still usable.
 
 
-| Configuration         | Context | Speed                  | VRAM        | Verdict                         |
-| --------------------- | ------- | ---------------------- | ----------- | ------------------------------- |
-| No MTP                | 32K     | \~25 tok/s             | 14 GB       | Baseline                        |
-| No MTP                | 64K     | 25 → 19 tok/s         | 14.8 GB     | Good                            |
-| No MTP                | 96K     | 25 → 16 tok/s         | 15.6 GB     | Usable, but slow                |
-| MTP-1                 | 64K     | 32–35 → 28 tok/s     | 15.6 GB     | Good                            |
-| **MTP-2**             | **64K** | **33–39 → 29 tok/s** | **15.6 GB** | **Best balance**                |
-| MTP-3                 | 32K     | 33–40 tok/s           | 14.8 GB     | No clear benefit; more variable |
-| Chat/Instruct + MTP-2 | 32K     | Similar to MTP-2       | Similar     | **Best for interactive use**    |
+| Configuration | Context | Speed                  | VRAM        | Verdict                              |
+| ------------- | ------- | ---------------------- | ----------- | ------------------------------------ |
+| No MTP        | 32K     | \~25 tok/s             | 14 GB       | Baseline                             |
+| No MTP        | 64K     | 25 → 19 tok/s         | 14.8 GB     | Good                                 |
+| No MTP        | 96K     | 25 → 16 tok/s         | 15.6 GB     | Usable,<br />but slow                |
+| MTP-1         | 64K     | 32–35 → 28 tok/s     | 15.6 GB     | Good                                 |
+| **MTP-2**     | **64K** | **33–39 → 29 tok/s** | **15.6 GB** | **Best balance**                     |
+| MTP-3         | 32K     | 33–40 tok/s           | 14.8 GB     | No clear benefit;<br />more variable |
+| Chat+MTP-2    | 32K     | Similar to MTP-2       | Similar     | **Interactive use**                  |
 
 Overall, **64K + MTP-2 looks like the best practical configuration** from these initial tests.
 
@@ -1534,16 +1534,16 @@ We are still on the edge but the throughput reduction is lower when the context 
 There is no real winner there for the MTP 2 ways: for larger context it is better to stick to a MTP 1 way that has the same throughput and allows to have a bit more context.
 
 
-| Configuration | Context  | Initial tok/s | \~100K context tok/s | VRAM / Offload       | Takeaway                                                 |
-| ------------- | -------- | ------------- | -------------------- | -------------------- | -------------------------------------------------------- |
-| **No MTP**    | 96K      | 26            | 18                   | 14.6 GB / 300 MB     | Good baseline, but lower throughput                      |
-| **No MTP**    | 128K     | 25            | 16                   | 15.3 GB / 300 MB     | Maximum tested context, slower                           |
-| **MTP 1**     | 96K      | 35            | 24                   | 15.4 GB / 300 MB     | Strong performance                                       |
-| **MTP 1**     | **112K** | **35**        | **23**               | **15.5 GB / 400 MB** | **Best balance: large context + usable throughput**      |
-| **MTP 1**     | 128K     | 31            | 9                    | 15.6 GB / 800 MB     | Too much offloading; not recommended                     |
-| **MTP 2**     | 96K      | 39            | 23                   | 15.5 GB / 400 MB     | Fastest initially, but little advantage at large context |
-| **MTP 2**     | 112K     | 36            | 19                   | 15.4 GB / 700 MB     | More CPU/MEM traffic; worse than MTP 1                   |
-| **MTP 2**     | 106K     | 38            | 24                   | 15.4 GB / 500 MB     | Better than 112K, but still marginal                     |
+| Configuration | Context  | Burst tok/s | \~100KTok tok/s | VRAM        | Takeaway         |
+| ------------- | -------- | ----------- | --------------- | ----------- | ---------------- |
+| **No MTP**    | 96K      | 26          | 18              | 14.6 GB     | Lower throughput |
+| **No MTP**    | 128K     | 25          | 16              | 15.3 GB     | Max context      |
+| **MTP 1**     | 96K      | 35          | 24              | 15.4 GB     | Strong perf      |
+| **MTP 1**     | **112K** | **35**      | **23**          | **15.5 GB** | **Best balance** |
+| **MTP 1**     | 128K     | 31          | 9               | 15.6 GB     | Not recommended  |
+| **MTP 2**     | 96K      | 39          | 23              | 15.5 GB     | Mmh              |
+| **MTP 2**     | 112K     | 36          | 19              | 15.4 GB     | Mmh              |
+| **MTP 2**     | 106K     | 38          | 24              | 15.4 GB     | Edge case        |
 
 **Best overall: MTP 1 with a 112K context.** It provides the best balance for this setup, reaching about **23 tok/s at \~102K tokens** while keeping offloading relatively low. MTP 2 offers higher initial throughput, but its advantage disappears as the context grows.
 
@@ -1849,15 +1849,15 @@ This is also a sweet spot, it does not change really when using MTP 1 or MTP 2 w
 #### Observations
 
 
-| Mode      |  Context |             Generation |                Prefill |        VRAM |     Offload | Notes                              |
-| --------- | -------: | ---------------------: | ---------------------: | ----------: | ----------: | ---------------------------------- |
-| No MTP    |     128K |               31 tok/s |            \~610 tok/s |     13.6 GB |      300 MB | Good baseline                      |
-| No MTP    |     192K |         31 → 15 tok/s |     \~610 → 410 tok/s |     15.1 GB |      300 MB | Throughput drops after\~150K       |
-| No MTP    |     220K |         30 → 13 tok/s |     \~610 → 360 tok/s |     15.5 GB |      400 MB | \~202K usable, 256K not worthwhile |
-| MTP 1     |     128K |         42 → 23 tok/s |            \~570 tok/s |     14.3 GB | 400–500 MB | Best performance at 128K           |
-| **MTP 1** | **172K** | **39–42 → 20 tok/s** | **\~565 → 380 tok/s** | **15.3 GB** |  **500 MB** | **Sweet spot**                     |
-| MTP 2     |     128K |     39–42 → 24 tok/s |            \~580 tok/s |     14.3 GB |      500 MB | Similar to MTP 1                   |
-| MTP 2     |     172K |     39–42 → 20 tok/s |     \~575 → 375 tok/s |     15.4 GB |      500 MB | Essentially same as MTP 1          |
+| Mode      |  Context | Generation tok/s |    Prefill tok/s |  VRAM GB | Offload MB | Notes                        |
+| --------- | -------: | ---------------: | ---------------: | -------: | ---------: | ---------------------------- |
+| No MTP    |     128K |               31 |            \~610 |      3.6 |        300 | Baseline                     |
+| No MTP    |     192K |         31 → 15 |     \~610 → 410 |     15.1 |        300 | Throughput drops after\~150K |
+| No MTP    |     220K |         30 → 13 |     \~610 → 360 |     15.5 |        400 | \~202K usable                |
+| MTP 1     |     128K |         42 → 23 |            \~570 |     14.3 |   400–500 | Best at 128K                 |
+| **MTP 1** | **172K** | **39–42 → 20** | **\~565 → 380** | **15.3** |    **500** | **Sweet spot**               |
+| MTP 2     |     128K |     39–42 → 24 |            \~580 |     14.3 |        500 | Similar to MTP 1             |
+| MTP 2     |     172K |     39–42 → 20 |     \~575 → 375 |     15.4 |        500 | Essentially same as MTP 1    |
 
 ##### Key Findings
 
