@@ -1800,7 +1800,7 @@ This is also a sweet spot, it does not change really when using MTP 1 or MTP 2 w
 
 ### IQ2_XXS
 
-This is the smallest possible one, for sure less capable than the other quantization.
+This is the smallest possible one, for sure less capable than the other quantization, but we can put a large context in it.
 
 #### MTP 2 Ways
 
