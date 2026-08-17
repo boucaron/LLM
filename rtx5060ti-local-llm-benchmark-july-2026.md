@@ -1940,6 +1940,82 @@ Prompts additional 80 Ktokens context: prefill about 324 tokens/s, inference 18 
 
 VRAM used @ 199  KTokens : 15.2 GB ( 600 MB Offloaded)
 
+#### MTP tuning
+
+Test performed running back to back 4 to 5 times the same prompt with the following template while varying the `--spec-draft-n-max` from 1 to 4 and trying some increments on `--spec-draft-p-min` from 0.0 to 0.9 using various increments.
+
+```bash
+llama-server 
+-m ..\Qwen3.8-27B-UD-IQ2_XXS.gguf --ctx-size 65536 
+-fa on --cache-type-k q4_0 --cache-type-v q4_0 --n-gpu-layers all --parallel 1 
+--temp 0.2 --top-p 1.0 --top-k 0 --min-p 0.0 --presence-penalty 0.0 --repeat-penalty 1.0 
+--seed 12345 --spec-type draft-mtp --spec-draft-n-max XXXX --spec-draft-p-min YYYY --reasoning off 
+```
+
+Prompt:
+
+"You are reviewing a Python service that processes a large stream of JSON events.
+
+The service receives events with this structure:
+
+{
+"id": "evt_123",
+"timestamp": 1712345678,
+"user_id": 42,
+"type": "purchase",
+"payload": {
+"amount": 19.99,
+"currency": "EUR"
+}
+}
+
+The current implementation is:
+
+import json
+from collections import defaultdict
+
+totals = defaultdict(float)
+
+def process(lines):
+    for line in lines:
+        event = json.loads(line)
+
+        if event["type"] == "purchase":
+            user_id = event["user_id"]
+            amount = event["payload"]["amount"]
+            totals[user_id] += amount
+
+    return dict(totals)
+The production system may process several million events per hour. Events can arrive out of order, duplicated, or malformed. Some events can have missing fields. The service runs continuously and should not keep the entire input stream in memory.
+
+Analyze this implementation and propose a production-quality redesign.
+
+Explain the problems with the current implementation, including correctness, floating-point accuracy, malformed input handling, duplicate events, memory usage, concurrency, and observability.
+
+Then provide a complete Python implementation of your proposed solution. The implementation should process the input as a stream, validate events, handle malformed records without stopping the entire stream, deduplicate events using event IDs, maintain monetary values accurately, and expose useful metrics such as processed events, rejected events, duplicate events, and total processing time.
+
+After the implementation, explain the time and space complexity.
+
+Finally, discuss how the design should change if the service is scaled horizontally across multiple machines and events for the same user can be processed by different workers.
+
+Be thorough and include concrete implementation details rather than only high-level recommendations.
+
+"
+
+
+##### Short summary
+
+
+| Config                 | Avg tok/s        | Observation                                         |
+| ---------------------- | ---------------- | --------------------------------------------------- |
+| `n-max=1, p-min=0`     | **41.89**        | Becomes preferable above the context-size threshold |
+| `n-max=2, p-min=0`     | **46.26**        | Best practical baseline                             |
+| `n-max=3, p-min=0`     | **46.91**        | Only\~1.4% faster                                   |
+| `n-max=4, p-min=0`     | **45.62**        | Slower; not worthwhile                              |
+| `n-max=2, p-min≥0.10` | **\~45.8–46.1** | No benefit from`p-min`                              |
+
+**Conclusion:** `n-max=2, p-min=0` is the best short-context setting. We already know that **above a context-size threshold, `n-max=1` becomes more efficient/faster**, making it preferable for long-context/agentic workloads.
+
 #### Observations
 
 I did not run without MTP those tests, this model keeps the throughput high even when we reach the majority of the context. It can run in 220KToc without any issue, there is no real gain to run above MTP with one way. There is a bit margin to put few more tokens but that is already on the limit.
@@ -1971,7 +2047,6 @@ llama-server.exe
 -fa on -np 1
 --cache-type-k q4_0 --cache-type-v q4_0
 ```
-
 Prompt 1: Output 698 tokens, 6.7s, 104.83 t/s
 
 Prompt 2: Output 796 tokens, 7.7s, 103.90 t/s
@@ -1998,7 +2073,6 @@ llama-server.exe
 --chat-template-kwargs "{\"enable_thinking\":false}"
 -fa on -np 1
 ```
-
 Prompt 1: Output 433 tokens, 6.2s, 69.39 t/s
 
 Prompt 2: Output 1081 tokens, 15s, 68.75 t/s
@@ -2020,7 +2094,6 @@ llama-server.exe
 -fa on -np 1
 --spec-type draft-mtp --spec-draft-n-max 1
 ```
-
 Prompt 1: Output 430 tokens, 5.2s, 82.69 t/s
 
 Prompt 2: Output 421 tokens, 4.7s, 89.09 t/s
@@ -2061,7 +2134,6 @@ llama-server.exe
 --chat-template-kwargs "{\"enable_thinking\":false}"
 -fa on -np 1 --cache-type-k q4_0 --cache-type-v q4_0
 ```
-
 Prompt 1: Output 349 tokens, 4.3s, 81.29 t/s
 
 Prompt 2: Output 609 tokens, 7.4s, 82.00 t/s
@@ -2086,7 +2158,6 @@ llama-server.exe
 -fa on -np 1
 --spec-type draft-mtp --spec-draft-n-max 1
 ```
-
 Prompt 1: Output 132 tokens, 1.6s, 83.36 t/s
 
 Prompt 2: Output 280 tokens, 3.4s, 83.12 t/s
@@ -2122,7 +2193,6 @@ llama-server
 --spec-type draft-dflash --spec-draft-p-min 0.2 --spec-draft-n-min 0 --spec-draft-n-max 3 
 --parallel 1 --jinja
 ```
-
 Prompt 1: Output 949 tokens, 33s, 28.21 t/s
 
 Prompt 2: Output 1,011 tokens, 36s, 27.66 t/s
@@ -2150,7 +2220,6 @@ llama-server.exe
 -c 32768 
 --n-cpu-moe 8 --reasoning off
 ```
-
 Another Burst Mode variant gives around **90 tok/s**, with slightly more offloading:
 
 ```bash
@@ -2160,7 +2229,6 @@ llama-server.exe
 --cache-type-k q4_0 --cache-type-v q4_0 --temp 1.0 --top-p 0.95 
 -c 32768 --n-cpu-moe 10
 ```
-
 Larger context 256 KToken:
 
 ```bash
@@ -2172,7 +2240,6 @@ llama-server.exe
 --temp 1.0 --top-p 0.95 -c 262144 
 --n-cpu-moe 13
 ```
-
 Burst Mode: 85 tok/s
 
 With 112K Context: 54 tok/s
@@ -2446,3 +2513,7 @@ A single mid-range consumer GPU is now sufficient to run several state-of-the-ar
 **16/08/2026**
 
 - Additional experiments on Qwen 3.8 27B to explore context size alternatives.
+
+**17/08/2026**
+
+- Add MTP tuning results for Qwen 3.8 27B `Qwen3.8-27B-UD-IQ2_XXS`
