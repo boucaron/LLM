@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Software Raytracer</title>
+<style>
+    * { margin: 0; padding: 0; }
+    body {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background: #0a0a0a;
+        font-family: monospace;
+    }
+    #container {
+        position: relative;
+    }
+    canvas {
+        width: 640px;
+        height: 480px;
+        image-rendering: pixelated;
+        border: 2px solid #333;
+        border-radius: 4px;
+    }
+    #info {
+        color: #aaa;
+        margin-top: 12px;
+        font-size: 13px;
+    }
+    #progress {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: #222;
+        border-radius: 0 0 2px 2px;
+        overflow: hidden;
+    }
+    #progressBar {
+        height: 100%;
+        background: #4af;
+        width: 0%;
+        transition: width 0.1s;
+    }
+</style>
+</head>
+<body>
+<div id="container">
+    <canvas id="canvas"></canvas>
+    <div id="progress"><div id="progressBar"></div></div>
+</div>
+<div id="info">Software Raytracer — Render at 320×240, scaled 2×</div>
+
+<script>
+(function() {
+    // ===== CONFIG =====
+    const RES_W = 320;
+    const RES_H = 240;
+    const MAX_DEPTH = 5;
+    const RENDER_ROWS_PER_FRAME = 4;
+
+    // ===== CANVAS SETUP =====
+    const canvas = document.getElementById('canvas');
+    canvas.width = RES_W;
+    canvas.height = RES_H;
+    const ctx = canvas.getContext('2d');
+    const imageData = ctx.createImageData(RES_W, RES_H);
+    const progressBar = document.getElementById('progressBar');
+
+    // ===== MATH HELPERS =====
+    function vec3(x, y, z) { return [x, y, z]; }
+    function vAdd(a, b) { return [a[0]+b[0], a[1]+b[1], a[2]+b[2]]; }
+    function vSub(a, b) { return [a[0]-b[0], a[1]-b[1], a[2]-b[2]]; }
+    function vScale(v, s) { return [v[0]*s, v[1]*s, v[2]*s]; }
+    function vDot(a, b) { return a[0]*b[0] + a[1]*b[1] + a[2]*b[2]; }
+    function vCross(a, b) {
+        return [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];
+    }
+    function vNorm(v) {
+        const len = Math.sqrt(vDot(v, v));
+        if (len < 1e-10) return [0,0,0];
+        return vScale(v, 1/len);
+    }
+    function vLerp(a, b, t) { return [a[0]+(b[0]-a[0])*t, a[1]+(b[1]-a[1])*t, a[2]+(b[2]-a[2])*t]; }
+
+    // ===== NOISE (Value Noise 3D) =====
+    function hash3(x, y, z) {
+        let n = (x * 374761393 + y * 668265263 + z * 1274126177) | 0;
+        n = ((n ^ (n >> 13)) * 1274126177) | 0;
+        return (((n ^ (n >> 16)) & 0x7fffffff) / 0x7fffffff);
+    }
+
+    function smoothstep(t) { return t * t * (3 - 2 * t); }
+
+    function noise3(x, y, z) {
+        const xi = Math.floor(x), yi = Math.floor(y), zi = Math.floor(z);
+        const xf = x - xi, yf = y - yi, zf = z - zi;
+        const u = smoothstep(xf), v = smoothstep(yf), w = smoothstep(zf);
+
+        const n000 = hash3(xi, yi, zi);
+        const n100 = hash3(xi+1, yi, zi);
+        const n010 = hash3(xi, yi+1, zi);
+        const n110 = hash3(xi+1, yi+1, zi);
+        const n001 = hash3(xi, yi, zi+1);
+        const n101 = hash3(xi+1, yi, zi+1);
+        const n011 = hash3(xi, yi+1, zi+1);
+        const n111 = hash3(xi+1, yi+1, zi+1);
+
+        const nx00 = n000 + (n100 - n000) * u;
+        const nx10 = n010 + (n110 - n010) * u;
+        const nx01 = n001 + (n101 - n001) * u;
+        const nx11 = n011 + (n111 - n011) * u;
+
+        const nxy0 = nx00 + (nx10 - nx00) * v;
+        const nxy1 = nx01 + (nx11 - nx01) * v;
+
+        return nxy0 + (nxy1 - nxy0) * w;
+    }
+
+    function fbm(x, y, z, octaves, lacunarity, gain) {
+        let sum = 0, amp = 1, freq = 1, maxAmp = 0;
+        for (let i = 0; i < octaves; i++) {
+            sum += amp * noise3(x * freq, y * freq, z * freq);
+            maxAmp += amp;
+            amp *= gain;
+            freq *= lacunarity;
+        }
+        return sum / maxAmp;
+    }
+
+    // ===== RAY INTERSECTIONS =====
+    function raySphere(origin, dir, center, radius) {
+        const oc = vSub(origin, center);
+        const a = vDot(dir, dir);
+        const b = 2 * vDot(oc, dir);
+        const c = vDot(oc, oc) - radius * radius;
+        const disc = b * b - 4 * a * c;
+        if (disc < 0) return -1;
+        const sq = Math.sqrt(disc);
+        let t = (-b - sq) / (2 * a);
+        if (t > 1e-4) return t;
+        t = (-b + sq) / (2 * a);
+        if (t > 1e-4) return t;
+        return -1;
+    }
+
+    function rayPlane(origin, dir, planeY) {
+        if (Math.abs(dir[1]) < 1e-8) return -1;
+        const t = (planeY - origin[1]) / dir[1];
+        if (t > 1e-4) return t;
+        return -1;
+    }
+
+    // ===== SCENE =====
+    const SPHERE_CENTER = [0, 1.0, 0];
+    const SPHERE_RADIUS = 0.9;
+    const GROUND_Y = 0.0;
+
+    // Camera
+    const camPos = [0, 1.2, 3.5];
+    const camTarget = [0, 1.0, 0];
+    const camUp = [0, 1, 0];
+
+    const forward = vNorm(vSub(camTarget, camPos));
+    const right = vNorm(vCross(forward, camUp));
+    const up = vCross(right, forward);
+
+    const FOV = 1.0; // tan(fov/2)
+    const ASPECT = RES_W / RES_H;
+
+    // ===== LIGHT =====
+    const lightDir = vNorm([0.5, 1.0, 0.3]);
+    const ambient = [0.15, 0.15, 0.18];
+
+    // ===== SHADERS =====
+    function shadeChecker(point) {
+        const ix = Math.floor(point[0]);
+        const iz = Math.floor(point[2]);
+        const isWhite = ((ix + iz) & 1) === 0;
+        const c1 = [0.9, 0.9, 0.9];
+        const c2 = [0.15, 0.15, 0.15];
+        return isWhite ? c1 : c2;
+    }
+
+    function shadeSphere(point, normal) {
+        // Slightly tinted metal
+        return [0.85, 0.85, 0.9];
+    }
+
+    function shadeSky(dir) {
+        // Gradient sky
+        const t = Math.max(0, dir[1]) * 0.6 + 0.4;
+        const sky = [
+            0.3 + t * 0.3,
+            0.5 + t * 0.3,
+            0.8 + t * 0.2
+        ];
+        return sky;
+    }
+
+    function getCloudDensity(dir) {
+        if (dir[1] <= 0) return 0;
+        // Map direction to a domain for clouds
+        const scale = 3.0;
+        const cx = dir[0] / dir[1] * scale;
+        const cy = dir[2] / dir[1] * scale;
+        const cz = 0;
+
+        const n = fbm(cx + 10, cy + 5, cz, 5, 2.0, 0.5);
+        // Threshold to create cloud shapes
+        const threshold = 0.48;
+        const cloud = Math.max(0, (n - threshold) / (1 - threshold));
+        return Math.min(1, cloud * 2.5);
+    }
+
+    // ===== RAY TRACE =====
+    function traceRay(origin, dir, depth) {
+        if (depth >= MAX_DEPTH) return [0, 0, 0];
+
+        let tSphere = raySphere(origin, dir, SPHERE_CENTER, SPHERE_RADIUS);
+        let tPlane = rayPlane(origin, dir, GROUND_Y);
+
+        let t = Infinity;
+        let hitType = 0; // 0=none, 1=sphere, 2=plane
+
+        if (tSphere > 0 && tSphere < t) { t = tSphere; hitType = 1; }
+        if (tPlane > 0 && tPlane < t) { t = tPlane; hitType = 2; }
+
+        if (hitType === 0) {
+            // Sky
+            let color = shadeSky(dir);
+            // Add clouds
+            const cloudDensity = getCloudDensity(dir);
+            if (cloudDensity > 0) {
+                const cloudColor = [
+                    1.0, 1.0, 1.0
+                ];
+                // Slight warm tint for clouds
+                const warm = [1.0, 0.97, 0.94];
+                color = vLerp(color, warm, cloudDensity * 0.85);
+            }
+            return color;
+        }
+
+        const hitPoint = vAdd(origin, vScale(dir, t));
+
+        let normal, albedo;
+        if (hitType === 1) {
+            normal = vNorm(vSub(hitPoint, SPHERE_CENTER));
+            albedo = shadeSphere(hitPoint, normal);
+        } else {
+            normal = [0, 1, 0];
+            albedo = shadeChecker(hitPoint);
+        }
+
+        // Lighting
+        const diff = Math.max(0, vDot(normal, lightDir));
+        let color = vAdd(
+            vScale(albedo, 0.3 + diff * 0.7),
+            vScale(albedo, 0.15) // ambient
+        );
+
+        // Reflection
+        const reflDir = vSub(dir, vScale(normal, 2 * vDot(dir, normal)));
+        const reflColor = traceRay(vAdd(hitPoint, vScale(normal, 0.001)), vNorm(reflDir), depth + 1);
+
+        // Mix: sphere is very reflective, ground is slightly reflective
+        const reflectivity = (hitType === 1) ? 0.7 : 0.15;
+        color = vLerp(color, reflColor, reflectivity);
+
+        // Simple gamma
+        return color;
+    }
+
+    // ===== RENDER =====
+    let renderRow = 0;
+    let rendering = true;
+    let frameStart = 0;
+    let fps = 0;
+
+    function renderFrame() {
+        if (!rendering) {
+            requestAnimationFrame(renderFrame);
+            return;
+        }
+
+        frameStart = performance.now();
+        let endRow = Math.min(renderRow + RENDER_ROWS_PER_FRAME, RES_H);
+
+        for (let y = renderRow; y < endRow; y++) {
+            for (let x = 0; x < RES_W; x++) {
+                // Calculate ray direction
+                const u = (2 * (x + 0.5) / RES_W - 1) * ASPECT * FOV;
+                const v = (1 - 2 * (y + 0.5) / RES_H) * FOV;
+                const dir = vNorm(vAdd(vAdd(vScale(right, u), vScale(up, v)), forward));
+
+                const color = traceRay(camPos, dir, 0);
+
+                // Clamp and gamma
+                const idx = (y * RES_W + x) * 4;
+                imageData.data[idx]     = Math.min(255, Math.pow(Math.max(0, color[0]), 0.45) * 255);
+                imageData.data[idx + 1] = Math.min(255, Math.pow(Math.max(0, color[1]), 0.45) * 255);
+                imageData.data[idx + 2] = Math.min(255, Math.pow(Math.max(0, color[2]), 0.45) * 255);
+                imageData.data[idx + 3] = 255;
+            }
+        }
+
+        renderRow = endRow;
+        ctx.putImageData(imageData, 0, 0);
+
+        const elapsed = performance.now() - frameStart;
+        fps = Math.round(1000 / Math.max(1, elapsed));
+        progressBar.style.width = (renderRow / RES_H * 100) + '%';
+
+        if (renderRow >= RES_H) {
+            rendering = false;
+            document.getElementById('info').textContent =
+                `Done in ${(elapsed * (RES_H / RENDER_ROWS_PER_FRAME) / 1000).toFixed(1)}s total | ${fps} fps (last frame)`;
+        }
+
+        requestAnimationFrame(renderFrame);
+    }
+
+    requestAnimationFrame(renderFrame);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEON PONG // 1987</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        @font-face {
+            font-family: 'Retro';
+            src: local('Courier New');
+        }
+
+        body {
+            background: #0a0a0f;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Scanlines overlay */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(0, 0, 0, 0.15) 2px,
+                rgba(0, 0, 0, 0.15) 4px
+            );
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        /* CRT vignette */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at center, transparent 60%, rgba(0, 0, 0, 0.7) 100%);
+            pointer-events: none;
+            z-index: 999;
+        }
+
+        #container {
+            position: relative;
+            z-index: 1;
+        }
+
+        h1 {
+            text-align: center;
+            color: #0ff;
+            font-size: 2rem;
+            text-shadow: 
+                0 0 10px #0ff,
+                0 0 20px #0ff,
+                0 0 40px #0ff,
+                0 0 80px #f0f;
+            letter-spacing: 8px;
+            margin-bottom: 10px;
+            animation: flicker 4s infinite;
+        }
+
+        @keyframes flicker {
+            0%, 100% { opacity: 1; }
+            92% { opacity: 1; }
+            93% { opacity: 0.4; }
+            94% { opacity: 1; }
+            96% { opacity: 0.7; }
+            97% { opacity: 1; }
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #f0f;
+            font-size: 0.8rem;
+            text-shadow: 0 0 10px #f0f;
+            letter-spacing: 4px;
+            margin-bottom: 15px;
+        }
+
+        canvas {
+            border: 2px solid #0ff;
+            box-shadow: 
+                0 0 10px #0ff,
+                0 0 20px rgba(0, 255, 255, 0.5),
+                inset 0 0 30px rgba(0, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+
+        #controls {
+            text-align: center;
+            color: #f0f;
+            font-size: 0.7rem;
+            margin-top: 12px;
+            text-shadow: 0 0 8px #f0f;
+            letter-spacing: 2px;
+            line-height: 1.8;
+        }
+
+        #score {
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 60px;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .score-left {
+            color: #0ff;
+            text-shadow: 0 0 10px #0ff, 0 0 20px #0ff;
+        }
+
+        .score-right {
+            color: #f0f;
+            text-shadow: 0 0 10px #f0f, 0 0 20px #f0f;
+        }
+
+        #start-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(10, 10, 15, 0.85);
+            z-index: 10;
+        }
+
+        #start-screen h2 {
+            color: #0ff;
+            font-size: 1.4rem;
+            text-shadow: 0 0 10px #0ff, 0 0 30px #0ff;
+            margin-bottom: 20px;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.02); }
+        }
+
+        #start-screen p {
+            color: #f0f;
+            font-size: 0.8rem;
+            text-shadow: 0 0 8px #f0f;
+            letter-spacing: 3px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <h1>NEON PONG</h1>
+        <div class="subtitle">/// 1987 /// ARCADE EDITION ///</div>
+        <div id="score">
+            <span class="score-left" id="score-l">0</span>
+            <span class="score-right" id="score-r">0</span>
+        </div>
+        <canvas id="game" width="800" height="500"></canvas>
+        <div id="start-screen">
+            <h2>► PRESS SPACE TO START ◄</h2>
+            <p>W/S or ↑↓ — MOVE PADDLE</p>
+        </div>
+    </div>
+    <div id="controls">
+        [W/S] or [↑/↓] MOVE &nbsp;|&nbsp; [SPACE] START/PAUSE &nbsp;|&nbsp; FIRST TO 10 WINS
+    </div>
+
+    <script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width;
+    const H = canvas.height;
+
+    // Game state
+    let gameStarted = false;
+    let gameOver = false;
+    let paused = false;
+    let shakeX = 0, shakeY = 0, shakeIntensity = 0;
+
+    // Audio context
+    let audioCtx = null;
+
+    function initAudio() {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+
+    function playSound(freq, duration, type = 'square', vol = 0.15) {
+        if (!audioCtx) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+    }
+
+    function playHit() { playSound(440, 0.08, 'square', 0.12); }
+    function playScore() { playSound(220, 0.3, 'sawtooth', 0.1); }
+    function playWall() { playSound(660, 0.05, 'triangle', 0.08); }
+
+    // Particles
+    let particles = [];
+
+    function spawnParticles(x, y, color, count = 12, speed = 4) {
+        for (let i = 0; i < count; i++) {
+            const angle = (Math.PI * 2 / count) * i + Math.random() * 0.5;
+            const spd = speed * (0.5 + Math.random());
+            particles.push({
+                x, y,
+                vx: Math.cos(angle) * spd,
+                vy: Math.sin(angle) * spd,
+                life: 1,
+                decay: 0.02 + Math.random() * 0.03,
+                color,
+                size: 2 + Math.random() * 3
+            });
+        }
+    }
+
+    // Ball trail
+    let trail = [];
+    const TRAIL_LENGTH = 15;
+
+    // Paddles
+    const PADDLE_W = 12;
+    const PADDLE_H = 80;
+    const PADDLE_SPEED = 7;
+
+    let paddleLeft = { x: 30, y: H / 2 - PADDLE_H / 2, dy: 0 };
+    let paddleRight = { x: W - 30 - PADDLE_W, y: H / 2 - PADDLE_H / 2, dy: 0 };
+
+    // Ball
+    let ball = { x: W / 2, y: H / 2, vx: 0, vy: 0, speed: 6, radius: 8 };
+
+    // Scores
+    let scoreLeft = 0, scoreRight = 0;
+    const WIN_SCORE = 10;
+
+    // Keys
+    let keys = {};
+    document.addEventListener('keydown', e => {
+        keys[e.key] = true;
+        if (e.key === ' ') {
+            e.preventDefault();
+            if (!gameStarted) {
+                gameStarted = true;
+                gameOver = false;
+                paused = false;
+                document.getElementById('start-screen').classList.add('hidden');
+                initAudio();
+                resetBall(Math.random() > 0.5 ? 1 : -1);
+            } else if (gameOver) {
+                scoreLeft = 0; scoreRight = 0;
+                updateScoreDisplay();
+                gameOver = false;
+                paused = false;
+                resetBall(Math.random() > 0.5 ? 1 : -1);
+            } else {
+                paused = !paused;
+            }
+        }
+    });
+    document.addEventListener('keyup', e => { keys[e.key] = false; });
+
+    function resetBall(direction) {
+        ball.x = W / 2;
+        ball.y = H / 2;
+        const angle = (Math.random() * 0.6 - 0.3);
+        ball.speed = 6;
+        ball.vx = direction * ball.speed * Math.cos(angle);
+        ball.vy = ball.speed * Math.sin(angle);
+        trail = [];
+    }
+
+    function updateScoreDisplay() {
+        document.getElementById('score-l').textContent = scoreLeft;
+        document.getElementById('score-r').textContent = scoreRight;
+    }
+
+    // AI paddle
+    function updateAI() {
+        const targetY = ball.y - PADDLE_H / 2;
+        const diff = targetY - paddleRight.y;
+        const aiSpeed = PADDLE_SPEED * 0.7;
+        if (Math.abs(diff) > 5) {
+            paddleRight.y += Math.sign(diff) * Math.min(aiSpeed, Math.abs(diff));
+        }
+        paddleRight.y = Math.max(0, Math.min(H - PADDLE_H, paddleRight.y));
+    }
+
+    function update() {
+        if (paused || !gameStarted || gameOver) return;
+
+        // Player paddle
+        if (keys['w'] || keys['W'] || keys['ArrowUp']) paddleLeft.y -= PADDLE_SPEED;
+        if (keys['s'] || keys['S'] || keys['ArrowDown']) paddleLeft.y += PADDLE_SPEED;
+        paddleLeft.y = Math.max(0, Math.min(H - PADDLE_H, paddleLeft.y));
+
+        // AI paddle
+        updateAI();
+
+        // Ball movement
+        ball.x += ball.vx;
+        ball.y += ball.vy;
+
+        // Trail
+        trail.push({ x: ball.x, y: ball.y });
+        if (trail.length > TRAIL_LENGTH) trail.shift();
+
+        // Wall bounce
+        if (ball.y - ball.radius <= 0) {
+            ball.y = ball.radius;
+            ball.vy = Math.abs(ball.vy);
+            playWall();
+            spawnParticles(ball.x, ball.y, '#0ff', 6, 2);
+            shakeIntensity = 2;
+        }
+        if (ball.y + ball.radius >= H) {
+            ball.y = H - ball.radius;
+            ball.vy = -Math.abs(ball.vy);
+            playWall();
+            spawnParticles(ball.x, ball.y, '#0ff', 6, 2);
+            shakeIntensity = 2;
+        }
+
+        // Paddle collision - left
+        if (ball.vx < 0 &&
+            ball.x - ball.radius <= paddleLeft.x + PADDLE_W &&
+            ball.x + ball.radius >= paddleLeft.x &&
+            ball.y >= paddleLeft.y &&
+            ball.y <= paddleLeft.y + PADDLE_H) {
+            ball.x = paddleLeft.x + PADDLE_W + ball.radius;
+            const hitPos = (ball.y - paddleLeft.y) / PADDLE_H - 0.5;
+            ball.speed = Math.min(ball.speed + 0.3, 14);
+            ball.vx = Math.abs(ball.speed * Math.cos(hitPos * 1.2));
+            ball.vy = ball.speed * Math.sin(hitPos * 1.2);
+            playHit();
+            spawnParticles(ball.x, ball.y, '#0ff', 15, 5);
+            shakeIntensity = 4;
+        }
+
+        // Paddle collision - right
+        if (ball.vx > 0 &&
+            ball.x + ball.radius >= paddleRight.x &&
+            ball.x - ball.radius <= paddleRight.x + PADDLE_W &&
+            ball.y >= paddleRight.y &&
+            ball.y <= paddleRight.y + PADDLE_H) {
+            ball.x = paddleRight.x - ball.radius;
+            const hitPos = (ball.y - paddleRight.y) / PADDLE_H - 0.5;
+            ball.speed = Math.min(ball.speed + 0.3, 14);
+            ball.vx = -Math.abs(ball.speed * Math.cos(hitPos * 1.2));
+            ball.vy = ball.speed * Math.sin(hitPos * 1.2);
+            playHit();
+            spawnParticles(ball.x, ball.y, '#f0f', 15, 5);
+            shakeIntensity = 4;
+        }
+
+        // Scoring
+        if (ball.x < -20) {
+            scoreRight++;
+            updateScoreDisplay();
+            playScore();
+            spawnParticles(0, ball.y, '#f0f', 20, 6);
+            shakeIntensity = 8;
+            if (scoreRight >= WIN_SCORE) {
+                gameOver = true;
+            } else {
+                resetBall(1);
+            }
+        }
+        if (ball.x > W + 20) {
+            scoreLeft++;
+            updateScoreDisplay();
+            playScore();
+            spawnParticles(W, ball.y, '#0ff', 20, 6);
+            shakeIntensity = 8;
+            if (scoreLeft >= WIN_SCORE) {
+                gameOver = true;
+            } else {
+                resetBall(-1);
+            }
+        }
+
+        // Particles update
+        for (let i = particles.length - 1; i >= 0; i--) {
+            const p = particles[i];
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vx *= 0.96;
+            p.vy *= 0.96;
+            p.life -= p.decay;
+            if (p.life <= 0) particles.splice(i, 1);
+        }
+
+        // Shake decay
+        shakeIntensity *= 0.85;
+        if (shakeIntensity < 0.1) shakeIntensity = 0;
+        shakeX = (Math.random() - 0.5) * shakeIntensity * 2;
+        shakeY = (Math.random() - 0.5) * shakeIntensity * 2;
+    }
+
+    // Drawing
+    function drawGrid() {
+        ctx.save();
+        ctx.globalAlpha = 0.08;
+        ctx.strokeStyle = '#0ff';
+        ctx.lineWidth = 1;
+
+        // Horizontal lines
+        for (let y = 0; y < H; y += 40) {
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(W, y);
+            ctx.stroke();
+        }
+        // Vertical lines
+        for (let x = 0; x < W; x += 40) {
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, H);
+            ctx.stroke();
+        }
+        ctx.restore();
+    }
+
+    function drawCenterLine() {
+        ctx.save();
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([10, 10]);
+        ctx.shadowColor = '#fff';
+        ctx.shadowBlur = 5;
+        ctx.beginPath();
+        ctx.moveTo(W / 2, 0);
+        ctx.lineTo(W / 2, H);
+        ctx.stroke();
+        ctx.restore();
+    }
+
+    function drawPaddle(paddle, color) {
+        ctx.save();
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 20;
+        ctx.fillStyle = color;
+        ctx.fillRect(paddle.x, paddle.y, PADDLE_W, PADDLE_H);
+        // Inner glow
+        ctx.shadowBlur = 40;
+        ctx.fillStyle = color;
+        ctx.fillRect(paddle.x, paddle.y, PADDLE_W, PADDLE_H);
+        ctx.restore();
+    }
+
+    function drawBall() {
+        // Trail
+        ctx.save();
+        for (let i = 0; i < trail.length; i++) {
+            const alpha = (i / trail.length) * 0.4;
+            const size = (i / trail.length) * ball.radius;
+            ctx.globalAlpha = alpha;
+            ctx.shadowColor = '#fff';
+            ctx.shadowBlur = 10;
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(trail[i].x, trail[i].y, size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.restore();
+
+        // Ball
+        ctx.save();
+        ctx.shadowColor = '#fff';
+        ctx.shadowBlur = 25;
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+        ctx.fill();
+        // Hot core
+        ctx.shadowBlur = 50;
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        ctx.beginPath();
+        ctx.arc(ball.x, ball.y, ball.radius * 0.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+    }
+
+    function drawParticles() {
+        ctx.save();
+        for (const p of particles) {
+            ctx.globalAlpha = p.life;
+            ctx.shadowColor = p.color;
+            ctx.shadowBlur = 8;
+            ctx.fillStyle = p.color;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.restore();
+    }
+
+    function drawGameOver() {
+        ctx.save();
+        ctx.globalAlpha = 0.8;
+        ctx.fillStyle = '#0a0a0f';
+        ctx.fillRect(0, 0, W, H);
+        ctx.globalAlpha = 1;
+
+        const winner = scoreLeft >= WIN_SCORE ? 'PLAYER' : 'CPU';
+        const color = scoreLeft >= WIN_SCORE ? '#0ff' : '#f0f';
+
+        ctx.font = 'bold 2.5rem Courier New';
+        ctx.textAlign = 'center';
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 30;
+        ctx.fillStyle = color;
+        ctx.fillText(`${winner} WINS!`, W / 2, H / 2 - 20);
+
+        ctx.font = '1rem Courier New';
+        ctx.shadowBlur = 10;
+        ctx.fillStyle = '#fff';
+        ctx.fillText('PRESS SPACE TO PLAY AGAIN', W / 2, H / 2 + 30);
+        ctx.restore();
+    }
+
+    function drawPaused() {
+        ctx.save();
+        ctx.globalAlpha = 0.6;
+        ctx.fillStyle = '#0a0a0f';
+        ctx.fillRect(0, 0, W, H);
+        ctx.globalAlpha = 1;
+        ctx.font = 'bold 1.5rem Courier New';
+        ctx.textAlign = 'center';
+        ctx.shadowColor = '#0ff';
+        ctx.shadowBlur = 20;
+        ctx.fillStyle = '#0ff';
+        ctx.fillText('PAUSED', W / 2, H / 2);
+        ctx.restore();
+    }
+
+    function draw() {
+        ctx.save();
+        ctx.translate(shakeX, shakeY);
+
+        // Background
+        ctx.fillStyle = '#0a0a0f';
+        ctx.fillRect(0, 0, W, H);
+
+        drawGrid();
+        drawCenterLine();
+
+        if (gameStarted && !gameOver) {
+            drawPaddle(paddleLeft, '#0ff');
+            drawPaddle(paddleRight, '#f0f');
+            drawBall();
+            drawParticles();
+        }
+
+        if (gameOver) drawGameOver();
+        if (paused && gameStarted && !gameOver) drawPaused();
+
+        ctx.restore();
+    }
+
+    // Main loop
+    function loop() {
+        update();
+        draw();
+        requestAnimationFrame(loop);
+    }
+
+    updateScoreDisplay();
+    loop();
+    </script>
+</body>
+</html>
