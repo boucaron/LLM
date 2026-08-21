@@ -143,6 +143,7 @@ During testing, the CPU was never the limiting factor.
   * **Important**: The GPU is deliberately kept quiet and is thermally limited to around 60 °C, so the GPU will throttle rather aggressively once it reaches this temperature. These results therefore prioritize a quiet, sustained local-LLM experience rather than maximum possible throughput. Linux, Game Ready drivers, higher power limits, or a higher thermal target should produce higher numbers.
 * llama.cpp b10069 (CUDA 13.3)
 * llama-b10360 (CUDA 13.3) starting from Muse Gleemer
+* llama-b10472 (CUDA 13.3) starting from Qwen 3.8 27B
 
 ## Methodology
 
@@ -1098,11 +1099,13 @@ For CPU-offloaded Qwen3.6-35B-A3B IQ4\_NL, MTP provides little additional benefi
 
 # 14 Qwen 3.8 27B
 
-Test Dates: 15-16/08/2026
+Test Dates: 15-16/08/2026 (Unsloth Dynamic Quant V 2.0)
+
+Test Dates: 19-21/08/2026 (Unsloth Dynamic Quant V 3.0)
 
 I would say this is a model that nearly all local LLM nerds have been waiting for, and it does not disappoint.
 
-I used the following Unsloth variants:
+I used the following Unsloth variants (15 to 17/08/2026: **those models are no more available**) :
 
 * Qwen3.8-27B-IQ4\_NL
 * Qwen3.8-27B-Q3\_K\_M
@@ -1110,7 +1113,16 @@ I used the following Unsloth variants:
 * Qwen3.8-27B-UD-Q2_K_XL
 * Qwen3.8-27B-UD-IQ2_XXS
 
-## Q3\_K\_M quantization
+19/08/2026: Unsloth pushed new variants using their *Dynamic Quant v3.0* (seems to preserve more the capabilities of the model) and the GGUF is having the MTP separated fromthe model. So I am redoing a short serie of experiments, because it mean we can have more context for the same model.
+
+So all the previous tests have the prefix **D2** for *Dynamic Quant V 2.0* and the new one **D3** for *Dynamic Quant V 3.0*.
+
+I used the following variants (19 to 21/08/2026):
+
+- Qwen3.8-27B-UD-IQ3_S (MTP included)
+- MTP: mtp-Qwen3.8-27B-Q4_0.gguf
+
+## D2 - Q3\_K\_M quantization
 
 I performed a few quick tests. I have not yet done extensive testing across different context sizes and model variants.
 
@@ -1320,7 +1332,7 @@ Without MTP, the model can be pushed to **96K context**, with throughput startin
 
 Overall, **64K + MTP-2 looks like the best practical configuration** from these initial tests.
 
-## Q3_K_S
+## D2 - Q3_K_S
 
 The previous experiments are interesting, but the context is a bit too small. So we try another variant with less VRAM used to have a large context.
 
@@ -1547,7 +1559,7 @@ There is no real winner there for the MTP 2 ways: for larger context it is bette
 
 **Best overall: MTP 1 with a 112K context.** It provides the best balance for this setup, reaching about **23 tok/s at \~102K tokens** while keeping offloading relatively low. MTP 2 offers higher initial throughput, but its advantage disappears as the context grows.
 
-## 4-bit quantization
+## D2 4-bit quantization
 
 We are testing a 4-bit quantization that is really at the limit or above what the 16 GB can handle.
 
@@ -1690,7 +1702,7 @@ Increasing GPU offloading improves throughput significantly: from **8–9 tok/s 
 
 Overall, the behaviour is very similar to the **Qwen3.6 27B 4-bit** tests. The combination of **aggressive GPU offloading + MTP** achieves around **20 tok/s in burst mode**, but memory offloading remains close to the edge. As the context fills, throughput begins to degrade somewhat faster.
 
-## 2-bits Quantization
+## D2 2-bits Quantization
 
 Of course, I could not resist to put more Context in the VRAM
 
@@ -1977,15 +1989,14 @@ from collections import defaultdict
 totals = defaultdict(float)
 
 def process(lines):
-    for line in lines:
-        event = json.loads(line)
+for line in lines:
+event = json.loads(line)
 
-        if event["type"] == "purchase":
-            user_id = event["user_id"]
-            amount = event["payload"]["amount"]
-            totals[user_id] += amount
-
-    return dict(totals)
+if event["type"] == "purchase":
+user_id = event["user_id"]
+amount = event["payload"]["amount"]
+totals[user_id] += amount
+return dict(totals)
 The production system may process several million events per hour. Events can arrive out of order, duplicated, or malformed. Some events can have missing fields. The service runs continuously and should not keep the entire input stream in memory.
 
 Analyze this implementation and propose a production-quality redesign.
@@ -2001,7 +2012,6 @@ Finally, discuss how the design should change if the service is scaled horizonta
 Be thorough and include concrete implementation details rather than only high-level recommendations.
 
 "
-
 
 ##### Short summary
 
@@ -2021,7 +2031,7 @@ Be thorough and include concrete implementation details rather than only high-le
 I did not run without MTP those tests, this model keeps the throughput high even when we reach the majority of the context. It can run in 220KToc without any issue, there is no real gain to run above MTP with one way. There is a bit margin to put few more tokens but that is already on the limit.
 
 
-| Configuration | Context | Classic Qs |   Prefill | Inference |    VRAM |
+| Configuration | Context | Throughput |   Prefill | Inference |    VRAM |
 | ------------- | ------: | ---------: | --------: | --------: | ------: |
 | MTP 2-way     |    151K | 42–57 t/s | \~440 t/s |  \~21 t/s | 14.7 GB |
 | MTP 2-way     |    104K | 42–46 t/s | \~507 t/s |  \~25 t/s | 15.3 GB |
@@ -2032,6 +2042,211 @@ I did not run without MTP those tests, this model keeps the throughput high even
 IQ2\_XXS is the smallest and least capable quantization tested, but its main advantage is its ability to handle a **very large context (\~220K tokens)** while maintaining surprisingly good throughput. MTP provides a modest speed benefit, especially at shorter contexts, but **2-way MTP offers little practical advantage over 1-way MTP** at very large context sizes. VRAM usage remains around **15 GB**, with \~600 MB offloaded.
 
 Overall, IQ2_XXS is a compelling option when **maximum context length and low VRAM usage are more important than model quality**. It can reach roughly 200K tokens of context without a dramatic collapse in inference speed.
+
+### D3 - Qwen3.8-27B-UD-IQ3_S
+
+Test Date: 21/08/2026
+
+This is a new *Dynamic Quant V3.0* from Unsloth according to them, it keeps more capabilities with respect to the size.
+
+**llama-b10472** used for those tests.
+
+#### No MTP
+
+```bash
+llama-server 
+-m "..\Qwen3.8-27B-UD-IQ3_S.gguf"  
+--ctx-size 32768 -fa on  
+--cache-type-k q4_0 --cache-type-v q4_0 
+--n-gpu-layers all --parallel 1 
+--temp 1.0 --top-p 0.95 --top-k 20 --min-p 0.0 
+--presence-penalty 0.0 --repeat-penalty 1.0 
+--reasoning-effort medium
+```
+
+##### 32 KToc
+
+Standard test for burst mode.
+
+Prompt 1: Output 869 tokens, 28s, 30.09 t/s
+
+Prompt 2: Output 1,571 tokens, 52s, 29.80 t/s
+
+Prompt 3: Output 1,528 tokens, 52s, 29.32 t/s
+
+VRAM used: 12.3 GB
+
+##### 180 KToc
+
+```bash
+llama-server 
+-m "..\Qwen3.8-27B-UD-IQ3_S.gguf"  
+--ctx-size 180000 -fa on  
+--cache-type-k q4_0 --cache-type-v q4_0 
+--n-gpu-layers all --parallel 1 
+--temp 1.0 --top-p 0.95 --top-k 20 --min-p 0.0 
+--presence-penalty 0.0 --repeat-penalty 1.0 
+--reasoning-effort medium
+```
+
+This is max content you can have.
+
+Prompt 1: Output 849 tokens, 29s, 28.34 t/s
+
+Prompt 2: Output 1,387 tokens, 49s, 27.90 t/s
+
+Prompt 3: Output 1,626 tokens, 58s, 27.78 t/s
+
+VRAM used: 15.6 GB (400 MB Shared)
+
+Fill the context with additional 49 KToc
+
+Prefill: 49180 tokens, 1min 11s, 684.88 tokens/s
+
+@53.7 KTok : Output: 585 tokens, 28s, 20.66 t/s
+
+Fill the context with additional 24.5 KToc
+
+Prefill: 24606 tokens, 47s, 519.79 tokens/s
+
+@78.5 KTok : Output: 157 tokens, 8.5s, 18.52 t/s
+
+#### MTP 1 Way
+
+I did not run the 32 KToc, only the max context.
+
+##### 120 KToc
+
+```bash
+llama-server 
+-m "..\Qwen3.8-27B-UD-IQ3_S.gguf"  
+--ctx-size 120000 -fa on  
+--cache-type-k q4_0 --cache-type-v q4_0 
+--n-gpu-layers all --parallel 1 
+--temp 1.0 --top-p 0.95 --top-k 20 --min-p 0.0 
+--presence-penalty 0.0 --repeat-penalty 1.0 
+--spec-type draft-mtp --spec-draft-n-max 1 --reasoning-effort medium
+```
+
+Prompt 1: Output 852 tokens, 21s, 40.23 t/s
+
+Prompt 2: Output 1,849 tokens, 45s, 40.62 t/s
+
+Prompt 3: Output 1,490 tokens, 37s, 39.38 t/s
+
+VRAM used: 15.4 GB (400 MB shared)
+
+Fill the context with additional 49 KToc
+
+Prefill: 49182 tokens, 1min 11s, 684.62 tokens/s
+
+@54.3 KTok : Output: 917 tokens, 29s, 30.63 t/s
+
+Fill the context with additional 24.5 KToc
+
+Prefill: 24606 tokens, 47s, 521.74 tokens/s
+
+@79.19 KTok: Output: 208 tokens, 7.6s, 27.25 t/s
+
+Fill the context with additional 24.5 KToc
+
+Prefill: 24606 tokens, 54s, 451.47 tokens/s
+
+@103.87 KTok: Output: 76 tokens, 3.0s, 25.67 t/s
+
+#### MTP 2 Ways
+
+```bash
+llama-server 
+-m "..\Qwen3.8-27B-UD-IQ3_S.gguf"  
+--ctx-size 32768 -fa on  
+--cache-type-k q4_0 --cache-type-v q4_0 
+--n-gpu-layers all --parallel 1 
+--temp 1.0 --top-p 0.95 --top-k 20 --min-p 0.0 
+--presence-penalty 0.0 --repeat-penalty 1.0 
+--spec-type draft-mtp --spec-draft-n-max 2 --reasoning-effort medium
+```
+
+##### 32 KToc
+
+Standard test for burst mode.
+
+Prompt 1: Output 924 tokens, 20s, 44.58 t/s
+
+Prompt 2: Output 2,262 tokens, 51s, 43.58 t/s
+
+Prompt 3: Output 1,530 tokens, 36s, 42.22 t/s
+
+VRAM used: 13.4 GB
+
+### 120 KToc
+
+```bash
+llama-server 
+-m "..\Qwen3.8-27B-UD-IQ3_S.gguf"  
+--ctx-size 120000 -fa on  
+--cache-type-k q4_0 --cache-type-v q4_0 
+--n-gpu-layers all --parallel 1 
+--temp 1.0 --top-p 0.95 --top-k 20 --min-p 0.0 
+--presence-penalty 0.0 --repeat-penalty 1.0 
+--spec-type draft-mtp --spec-draft-n-max 2 --reasoning-effort medium
+```
+
+Nearly max context you can put on the GPU, test burst mode, there is a few more tokens you can put before offloading to the CPU/MEM
+
+Prompt 1: Output 1,153 tokens, 27s, 41.88 t/s
+
+Prompt 2: Output 1,701 tokens, 39s, 43.15 t/s
+
+Prompt 3: Output 1,105 tokens, 26s, 40.93 t/s
+
+VRAM used: 15.6 GB (400 MB shared)
+
+Fill the context with additional 49 KToc
+
+Prefill: 49180 tokens, 1min 10s, 696.97 tokens/s
+
+@54.2 KTok : Output: 1,001 tokens, 33s, 30.04 t/s
+
+Fill the context with additional 24.5 KToc
+
+Prefill: 24606 tokens, 46s, 532.54 tokens/s
+
+@79.05 KTok: Output: 220 tokens, 9.0s, 24.46 t/s
+
+Relaunch server and resume the session (prefill all tokens)
+
+Fill the context with additional 24.5 KToc
+
+Prefilll: 103080 tokens Prefill Throughput:  532.54 tokens/s
+
+@103.8 KTok: Output: 184 tokens, 7.5s, 24.42 t/s
+
+### Observations
+
+Nothing really special, the throughput is pretty similar to previous GGUFs. I don't evaluate if the model is more capable.
+
+
+
+| Config    | Ctx  | Throughput | Prefill  | Inference       | VRAM    |
+| --------- | ---- | ---------- | -------- | --------------- | ------- |
+| No MTP    | 32K  | 29–30 t/s | —       | —              | 12.3 GB |
+| No MTP    | 180K | 27–28 t/s | ~685 t/s | ~18.5 t/s @78K  | 15.6 GB |
+| MTP 1-way | 120K | 39–40 t/s | ~685 t/s | ~25.7 t/s @104K | 15.4 GB |
+| MTP 2-way | 32K  | 42–44 t/s | —       | —              | 13.4 GB |
+| MTP 2-way | 120K | 40–43 t/s | ~697 t/s | ~24.4 t/s @104K | 15.6 GB |
+
+I think it is probably going to be my daily driver for chat and agent with the MTP 2 Ways and 120 KToc. MTP 1 Way works very similar with 120 KToc. Without MTP you can have 180 KToc context, but the throughput is slightly smaller. It makes sense to use the MTP from a throughput point of view, even when the context is nearly full there is still a nice throughput advantage.
+
+## Recommendations
+
+There are several viable recipes depending on the context you need: **4-bit for smaller contexts, 3-bit for small to medium contexts, and 2-bit for medium to very large contexts.**
+
+The new **IQ3\_S D3** variant is particularly interesting for daily coding and agentic use. With **MTP-2 and a 120K context**, I can reach around **50 tok/s in real-world coding sessions**, while keeping the throughput remarkably consistent.
+
+I previously used **Q3\_K\_M + MTP-2** extensively at 32K context, typically getting around **40–46 tok/s**. Being able to move to a much larger context without sacrificing interactive usability is, for me, one of the biggest improvements.
+
+It also means **less context engineering is required**: fewer situations where I need to carefully manage the context, fork a session, or `merge` it back together. Of course, for long-running agentic sessions, forking and merging is still a good habit, but having 120K available gives much more breathing room.
 
 # 15. Other Tested Models
 
@@ -2047,6 +2262,7 @@ llama-server.exe
 -fa on -np 1
 --cache-type-k q4_0 --cache-type-v q4_0
 ```
+
 Prompt 1: Output 698 tokens, 6.7s, 104.83 t/s
 
 Prompt 2: Output 796 tokens, 7.7s, 103.90 t/s
@@ -2073,6 +2289,7 @@ llama-server.exe
 --chat-template-kwargs "{\"enable_thinking\":false}"
 -fa on -np 1
 ```
+
 Prompt 1: Output 433 tokens, 6.2s, 69.39 t/s
 
 Prompt 2: Output 1081 tokens, 15s, 68.75 t/s
@@ -2094,6 +2311,7 @@ llama-server.exe
 -fa on -np 1
 --spec-type draft-mtp --spec-draft-n-max 1
 ```
+
 Prompt 1: Output 430 tokens, 5.2s, 82.69 t/s
 
 Prompt 2: Output 421 tokens, 4.7s, 89.09 t/s
@@ -2134,6 +2352,7 @@ llama-server.exe
 --chat-template-kwargs "{\"enable_thinking\":false}"
 -fa on -np 1 --cache-type-k q4_0 --cache-type-v q4_0
 ```
+
 Prompt 1: Output 349 tokens, 4.3s, 81.29 t/s
 
 Prompt 2: Output 609 tokens, 7.4s, 82.00 t/s
@@ -2158,6 +2377,7 @@ llama-server.exe
 -fa on -np 1
 --spec-type draft-mtp --spec-draft-n-max 1
 ```
+
 Prompt 1: Output 132 tokens, 1.6s, 83.36 t/s
 
 Prompt 2: Output 280 tokens, 3.4s, 83.12 t/s
@@ -2193,6 +2413,7 @@ llama-server
 --spec-type draft-dflash --spec-draft-p-min 0.2 --spec-draft-n-min 0 --spec-draft-n-max 3 
 --parallel 1 --jinja
 ```
+
 Prompt 1: Output 949 tokens, 33s, 28.21 t/s
 
 Prompt 2: Output 1,011 tokens, 36s, 27.66 t/s
@@ -2220,6 +2441,7 @@ llama-server.exe
 -c 32768 
 --n-cpu-moe 8 --reasoning off
 ```
+
 Another Burst Mode variant gives around **90 tok/s**, with slightly more offloading:
 
 ```bash
@@ -2229,6 +2451,7 @@ llama-server.exe
 --cache-type-k q4_0 --cache-type-v q4_0 --temp 1.0 --top-p 0.95 
 -c 32768 --n-cpu-moe 10
 ```
+
 Larger context 256 KToken:
 
 ```bash
@@ -2240,6 +2463,7 @@ llama-server.exe
 --temp 1.0 --top-p 0.95 -c 262144 
 --n-cpu-moe 13
 ```
+
 Burst Mode: 85 tok/s
 
 With 112K Context: 54 tok/s
@@ -2312,11 +2536,17 @@ The model was provided by empero-ai.
 
 ## Qwen 3.8 27B
 
+Dynamic Quant V2.0
+
 * `Qwen3.8-27B-IQ4_NL`
 * `Qwen3.8-27B-Q3_K_M`
 * `Qwen3.8-27B-Q3_K_S`
 * `Qwen3.8-27B-UD-Q2_K_XL`
 * `Qwen3.8-27B-UD-IQ2_XXS`
+
+Dynamic Quant V3.0
+
+- `Qwen3.8-27B-UD-IQ3_S`
 
 # 16. Practical Recommendations
 
@@ -2517,3 +2747,11 @@ A single mid-range consumer GPU is now sufficient to run several state-of-the-ar
 **17/08/2026**
 
 - Add MTP tuning results for Qwen 3.8 27B `Qwen3.8-27B-UD-IQ2_XXS`
+
+**19/08/2026**
+
+- Add note regarding Unsloth changes with Dynamic Quant V3 models => some models are used are no more available
+
+**21/08/2026**
+
+- Evaluate new Unsloth Qwen 3.8 27B `Qwen3.8-27B-UD-IQ3_S`
