@@ -36,18 +36,18 @@ Even models that exceed the available VRAM at higher-quality quantization levels
 
 
 | Model                                  | Avg t/s |    VRAM | Practical on 16 GB? |
-| -------------------------------------- | --------: | ------: | :-----------------: |
-| Gemma 4 26B A4B IQ2\_XXS               |      \~90 | 10.9 GB |     ⭐⭐⭐⭐⭐     |
-| Qwen 3.6 27B IQ2\_XXS                  |      \~30 | 10.4 GB |     ⭐⭐⭐☆☆     |
-| Qwen 3 Coder 30B A3B Instruct IQ2\_XXS |      \~75 | 11.5 GB |     ⭐⭐⭐⭐⭐     |
-| Qwen 3.6 35B A3B Instruct IQ2\_XXS     |      \~80 | 11.2 GB |     ⭐⭐⭐⭐⭐     |
-| Qwen 3.6 27B MTP IQ2\_XXS              |      \~45 | 11.0 GB |     ⭐⭐⭐⭐☆     |
-| Qwen 3.6 35B A3B Instruct MTP IQ2\_XXS |     \~120 | 12.5 GB |     ⭐⭐⭐⭐⭐     |
-| Ornith 1.0 35B IQ2\_XXS                |      \~90 | 11.8 GB |     ⭐⭐⭐⭐⭐     |
-| Ornith 1.0 9B                          |      \~60 |  6.8 GB |     ⭐⭐⭐⭐☆     |
-| Ornith 1.0 9B MTP                      |      \~80 |  7.4 GB |     ⭐⭐⭐⭐⭐     |
-| KAT-Coder-V2.5-Dev IQ2\_XXS            |      \~80 | 10.5 GB |     ⭐⭐⭐⭐⭐     |
-| Qwythos-9B-Claude-Mythos-5-1M MTP      |      \~80 |  7.7 GB |     ⭐⭐⭐⭐⭐     |
+| -------------------------------------- | ------: | ------: | :-----------------: |
+| Gemma 4 26B A4B IQ2\_XXS               |    \~90 | 10.9 GB |     ⭐⭐⭐⭐⭐     |
+| Qwen 3.6 27B IQ2\_XXS                  |    \~30 | 10.4 GB |     ⭐⭐⭐☆☆     |
+| Qwen 3 Coder 30B A3B Instruct IQ2\_XXS |    \~75 | 11.5 GB |     ⭐⭐⭐⭐⭐     |
+| Qwen 3.6 35B A3B Instruct IQ2\_XXS     |    \~80 | 11.2 GB |     ⭐⭐⭐⭐⭐     |
+| Qwen 3.6 27B MTP IQ2\_XXS              |    \~45 | 11.0 GB |     ⭐⭐⭐⭐☆     |
+| Qwen 3.6 35B A3B Instruct MTP IQ2\_XXS |   \~120 | 12.5 GB |     ⭐⭐⭐⭐⭐     |
+| Ornith 1.0 35B IQ2\_XXS                |    \~90 | 11.8 GB |     ⭐⭐⭐⭐⭐     |
+| Ornith 1.0 9B                          |    \~60 |  6.8 GB |     ⭐⭐⭐⭐☆     |
+| Ornith 1.0 9B MTP                      |    \~80 |  7.4 GB |     ⭐⭐⭐⭐⭐     |
+| KAT-Coder-V2.5-Dev IQ2\_XXS            |    \~80 | 10.5 GB |     ⭐⭐⭐⭐⭐     |
+| Qwythos-9B-Claude-Mythos-5-1M MTP      |    \~80 |  7.7 GB |     ⭐⭐⭐⭐⭐     |
 
 ## Practical configurations
 
@@ -340,10 +340,10 @@ Note that llama.cpp prioritizes keeping the KV cache in VRAM for performance; ho
 
 | Layers in GPU | VRAM Usage | Throughput |
 | ------------: | ---------: | ---------: |
-|            48 |    13.1 GB | \~13 t/s |
-|            51 |    13.7 GB | \~14 t/s |
-|            59 |    15.4 GB | \~23 t/s |
-|            60 |    15.5 GB | \~24 t/s |
+|            48 |    13.1 GB |   \~13 t/s |
+|            51 |    13.7 GB |   \~14 t/s |
+|            59 |    15.4 GB |   \~23 t/s |
+|            60 |    15.5 GB |   \~24 t/s |
 
 ### Observations
 
@@ -377,9 +377,9 @@ I performed three runs: one without MTP, one with MTP set to 1, and one with MTP
 
 |  MTP | VRAM Used | Throughput |
 | ---: | --------: | ---------: |
-| None |   14.1 GB | \~25 t/s |
-|    1 |   14.5 GB | \~36 t/s |
-|    2 |   14.8 GB | \~41 t/s |
+| None |   14.1 GB |   \~25 t/s |
+|    1 |   14.5 GB |   \~36 t/s |
+|    2 |   14.8 GB |   \~41 t/s |
 
 The model fits in VRAM, and there is a major gain in throughput.
 
@@ -404,8 +404,8 @@ llama-server.exe
 Here the experiment is to check how much context we can put on the GPU without killing throughput.
 
 
-| Context |       VRAM Used |                      Throughput |
-| ------: | --------------: | ------------------------------: |
+| Context |       VRAM Used |                    Throughput |
+| ------: | --------------: | ----------------------------: |
 |     32K | 13.5 → 13.7 GB |  Start:\~40 → @28K: \~36 t/s |
 |     64K | 14.4 → 14.6 GB |  Start:\~40 → @52K: \~31 t/s |
 |     96K | 15.5 → 15.5 GB |  Start:\~40 → @77K: \~27 t/s |
@@ -1029,8 +1029,8 @@ Models:
 ## Non-MTP
 
 
-| CPU MoE Layers Offloaded |    VRAM |   No MTP + KV Q4 |
-| -----------------------: | ------: | ---------------: |
+| CPU MoE Layers Offloaded |    VRAM | No MTP + KV Q4 |
+| -----------------------: | ------: | -------------: |
 |                       12 | 13.5 GB | **65–66 t/s** |
 |                       14 | 12.7 GB | **62–63 t/s** |
 |                       16 | 12.1 GB | **59–60 t/s** |
@@ -1039,11 +1039,11 @@ Models:
 ## MTP 2
 
 
-| CPU MoE Layers Offloaded |    VRAM | MTP 2 + KV Q4 |
-| -----------------------: | ------: | ----------------: |
-|                       14 | 13.5 GB |  **65–67 t/s** |
-|                       16 | 12.8 GB |  **59–67 t/s** |
-|                       18 | 12.1 GB |  **58–61 t/s** |
+| CPU MoE Layers Offloaded |    VRAM |  MTP 2 + KV Q4 |
+| -----------------------: | ------: | -------------: |
+|                       14 | 13.5 GB | **65–67 t/s** |
+|                       16 | 12.8 GB | **59–67 t/s** |
+|                       18 | 12.1 GB | **58–61 t/s** |
 
 When the model is CPU-offloaded, MTP provides only a modest improvement because the CPU/PCIe path becomes a dominant part of the inference cost.
 
@@ -1062,15 +1062,15 @@ Final benchmark results were therefore collected after a fresh reboot.
 ### Post-Suspend Performance
 
 
-| CPU MoE |    VRAM | MTP 2 + KV Q4 |
-| ------: | ------: | ----------------: |
-|      14 | 13.5 GB |  **55–57 t/s** |
-|      16 | 12.8 GB |  **52–57 t/s** |
-|      18 | 12.1 GB |  **52–54 t/s** |
+| CPU MoE |    VRAM |  MTP 2 + KV Q4 |
+| ------: | ------: | -------------: |
+|      14 | 13.5 GB | **55–57 t/s** |
+|      16 | 12.8 GB | **52–57 t/s** |
+|      18 | 12.1 GB | **52–54 t/s** |
 
 
-| CPU MoE |    VRAM |   No MTP + KV Q4 |
-| ------: | ------: | ---------------: |
+| CPU MoE |    VRAM | No MTP + KV Q4 |
+| ------: | ------: | -------------: |
 |      12 | 13.5 GB | **53–54 t/s** |
 |      14 | 12.8 GB | **52–53 t/s** |
 |      16 | 12.0 GB |   **\~50 t/s** |
@@ -1079,15 +1079,15 @@ Final benchmark results were therefore collected after a fresh reboot.
 ### Post-Reboot Performance
 
 
-| CPU MoE |    VRAM | MTP 2 + KV Q4 |
-| ------: | ------: | ----------------: |
-|      14 | 13.5 GB |  **65–67 t/s** |
-|      16 | 12.8 GB |  **59–67 t/s** |
-|      18 | 12.1 GB |  **58–61 t/s** |
+| CPU MoE |    VRAM |  MTP 2 + KV Q4 |
+| ------: | ------: | -------------: |
+|      14 | 13.5 GB | **65–67 t/s** |
+|      16 | 12.8 GB | **59–67 t/s** |
+|      18 | 12.1 GB | **58–61 t/s** |
 
 
-| CPU MoE |    VRAM |   No MTP + KV Q4 |
-| ------: | ------: | ---------------: |
+| CPU MoE |    VRAM | No MTP + KV Q4 |
+| ------: | ------: | -------------: |
 |      12 | 13.5 GB | **65–66 t/s** |
 |      14 | 12.7 GB | **62–63 t/s** |
 |      16 | 12.1 GB | **59–60 t/s** |
@@ -1320,15 +1320,15 @@ In these tests, **Qwen3.8-27B-Q3\_K\_M.gguf with MTP-2 is a very good fit for up
 Without MTP, the model can be pushed to **96K context**, with throughput starting around **25 t/s** and dropping to about **16 t/s** near the limit. That's on the slow side, but still usable.
 
 
-| Configuration | Context | Speed                  | VRAM        | Verdict                              |
-| ------------- | ------- | ---------------------- | ----------- | ------------------------------------ |
+| Configuration | Context | Speed                | VRAM        | Verdict                              |
+| ------------- | ------- | -------------------- | ----------- | ------------------------------------ |
 | No MTP        | 32K     | \~25 t/s             | 14 GB       | Baseline                             |
 | No MTP        | 64K     | 25 → 19 t/s         | 14.8 GB     | Good                                 |
 | No MTP        | 96K     | 25 → 16 t/s         | 15.6 GB     | Usable,<br />but slow                |
 | MTP-1         | 64K     | 32–35 → 28 t/s     | 15.6 GB     | Good                                 |
 | **MTP-2**     | **64K** | **33–39 → 29 t/s** | **15.6 GB** | **Best balance**                     |
 | MTP-3         | 32K     | 33–40 t/s           | 14.8 GB     | No clear benefit;<br />more variable |
-| Chat+MTP-2    | 32K     | Similar to MTP-2       | Similar     | **Interactive use**                  |
+| Chat+MTP-2    | 32K     | Similar to MTP-2     | Similar     | **Interactive use**                  |
 
 Overall, **64K + MTP-2 looks like the best practical configuration** from these initial tests.
 
@@ -1547,15 +1547,15 @@ There is no real winner there for the MTP 2: for larger context it is better to 
 
 
 | Configuration | Context  | Burst t/s | \~100K t/s | VRAM        | Takeaway         |
-| ------------- | -------- | ----------- | --------------- | ----------- | ---------------- |
-| **No MTP**    | 96K      | 26          | 18              | 14.6 GB     | Lower throughput |
-| **No MTP**    | 128K     | 25          | 16              | 15.3 GB     | Max context      |
-| **MTP 1**     | 96K      | 35          | 24              | 15.4 GB     | Strong perf      |
-| **MTP 1**     | **112K** | **35**      | **23**          | **15.5 GB** | **Best balance** |
-| **MTP 1**     | 128K     | 31          | 9               | 15.6 GB     | Not recommended  |
-| **MTP 2**     | 96K      | 39          | 23              | 15.5 GB     | Mmh              |
-| **MTP 2**     | 112K     | 36          | 19              | 15.4 GB     | Mmh              |
-| **MTP 2**     | 106K     | 38          | 24              | 15.4 GB     | Edge case        |
+| ------------- | -------- | --------- | ---------- | ----------- | ---------------- |
+| **No MTP**    | 96K      | 26        | 18         | 14.6 GB     | Lower throughput |
+| **No MTP**    | 128K     | 25        | 16         | 15.3 GB     | Max context      |
+| **MTP 1**     | 96K      | 35        | 24         | 15.4 GB     | Strong perf      |
+| **MTP 1**     | **112K** | **35**    | **23**     | **15.5 GB** | **Best balance** |
+| **MTP 1**     | 128K     | 31        | 9          | 15.6 GB     | Not recommended  |
+| **MTP 2**     | 96K      | 39        | 23         | 15.5 GB     | Mmh              |
+| **MTP 2**     | 112K     | 36        | 19         | 15.4 GB     | Mmh              |
+| **MTP 2**     | 106K     | 38        | 24         | 15.4 GB     | Edge case        |
 
 **Best overall: MTP 1 with a 112K context.** It provides the best balance for this setup, reaching about **23 t/s at \~102K tokens** while keeping offloading relatively low. MTP 2 offers higher initial throughput, but its advantage disappears as the context grows.
 
@@ -1684,8 +1684,8 @@ Memory offloading we are above the edge, when the context starts to fill in the 
 Pretty similar behaviour like the Qwen 3.6 27B in 4-bits quantization. MTP enables additional throughput, with the offloading and the MTP together we achieved around 20 t/s in burst mode.
 
 
-| Configuration     | VRAM    | Throughput       | Notes                           |
-| ----------------- | ------- | ---------------- | ------------------------------- |
+| Configuration     | VRAM    | Throughput     | Notes                           |
+| ----------------- | ------- | -------------- | ------------------------------- |
 | All layers        | >16 GB  | \~9 t/s        | \~700 MB spilled to CPU         |
 | 51 layers         | 12.8 GB | 8–9 t/s       | Stable, significant CPU offload |
 | 59 layers         | 14.6 GB | 12–13 t/s     | Good balance                    |
@@ -1861,7 +1861,7 @@ This is also a sweet spot, there is no significant difference between MTP 1 and 
 #### Observations
 
 
-| Mode      |  Context | Generation t/s |    Prefill t/s |  VRAM GB | Offload MB | Notes                        |
+| Mode      |  Context |   Generation t/s |      Prefill t/s |  VRAM GB | Offload MB | Notes                        |
 | --------- | -------: | ---------------: | ---------------: | -------: | ---------: | ---------------------------- |
 | No MTP    |     128K |               31 |            \~610 |      3.6 |        300 | Baseline                     |
 | No MTP    |     192K |         31 → 15 |     \~610 → 410 |     15.1 |        300 | Throughput drops after\~150K |
@@ -2016,7 +2016,7 @@ Be thorough and include concrete implementation details rather than only high-le
 ##### Short summary
 
 
-| Config                 | Avg t/s        | Observation                                         |
+| Config                 | Avg t/s          | Observation                                         |
 | ---------------------- | ---------------- | --------------------------------------------------- |
 | `n-max=1, p-min=0`     | **41.89**        | Becomes preferable above the context-size threshold |
 | `n-max=2, p-min=0`     | **46.26**        | Best practical baseline                             |
@@ -2237,7 +2237,7 @@ Nothing really special, the throughput is pretty similar to previous GGUFs. I do
 | MTP 2-way | 32K  | 42–44 t/s | —       | —              | 13.4 GB |
 | MTP 2-way | 120K | 40–43 t/s | ~697 t/s | ~24.4 t/s @104K | 15.6 GB |
 
- MTP 1 and MTP 2 perform very similar with 120 K. Without MTP you can have 180 K context, but the throughput is slightly smaller. It makes sense to use the MTP from a throughput point of view, even when the context is nearly full there is still a nice throughput advantage.
+MTP 1 and MTP 2 perform very similar with 120 K. Without MTP you can have 180 K context, but the throughput is slightly smaller. It makes sense to use the MTP from a throughput point of view, even when the context is nearly full there is still a nice throughput advantage.
 
 ## Recommendations
 
@@ -2430,7 +2430,7 @@ Pending further maturation of the software stack, these results are preliminary.
 
 ## NVIDIA-Nemotron-3.5-Lightning-30B-A3B-GGUF
 
-I used the Bartowski variant in 4-bit IQ4\_XS for this one. CPU/MEM offloading is required to fit the model adn to retain most of its capabilities. The Bartowski variant also supports MTP if needed.
+I used the Bartowski variant in 4-bit IQ4\_XS for this one. CPU/MEM offloading is required to fit the model to retain most of its capabilities. The Bartowski variant also supports MTP if needed.
 
 Burst Mode (High Throughput)
 
@@ -2480,7 +2480,141 @@ The throughput is decent, and I find it to be an interesting model. It behaves s
 
 What I find particularly interesting is that it remains quite fast for a 4-bit model with offloading. I will probably experiment with it further.
 
----
+## Ornith-1.5-35B-A3B
+
+### 4-bit quantization
+
+I used the official 4-bit quantization from ornith-ai.
+
+#### No MTP
+
+```bash
+lama-server -m ..\Ornith-1.5-35B-Q4_K_M.gguf
+ --ctx-size 32768 -fa on  --cache-type-k q4_0 --cache-type-v q4_0  
+--parallel 1 --temp 0.6 --top-p 0.95 --top-k 20 --n-cpu-moe 13
+```
+
+##### 32K
+
+Prompt 1: Output 1,549 tokens, 21s, 72.11 t/s
+
+Prompt 2: Output 1,013 tokens, 13s, 72.46 t/s
+
+Prompt 3: Output 1,412 tokens, 19s, 71.59 t/s
+
+VRAM used: 15.4 GB (200 MB Offload)
+
+##### 128 K
+
+```bash
+llama-server -m ..\Ornith-1.5-35B-Q4_K_M.gguf
+ --ctx-size 131072 -fa on  --cache-type-k q4_0 --cache-type-v q4_0  
+--parallel 1 --temp 0.6 --top-p 0.95 --top-k 20 --n-cpu-moe 14
+```
+
+Prompt 1: Output 1,544 tokens, 21s, 70.76 t/s
+
+Prompt 2: Output 996 tokens, 13s, 71.29 t/s
+
+Prompt 3: Output 1,015 tokens, 14s, 70.64 t/s
+
+VRAM used: 15.4 GB (200 MB Offload)
+
+Adding 49182 tokens
+
+Prefill 1min 2s, 789.96 tokens/s
+
+53.7K Output 882 tokens 16s 53.45 t/s
+
+##### 240 K
+
+```bash
+llama-server -m ..\Ornith-1.5-35B-Q4_K_M.gguf
+ --ctx-size 240000 -fa on  --cache-type-k q4_0 --cache-type-v q4_0  
+--parallel 1 --temp 0.6 --top-p 0.95 --top-k 20 --n-cpu-moe 15
+```
+
+VRAM used: 15.6 GB (400 MB Offload)
+
+Adding 97821 tokens
+
+Prefill 2min 15s, 723.77 tokens/s
+
+98.49K Output 666 tokens 15s 43.22 t/s
+
+Adding 97821 tokens
+
+Prefill 2min 45s, 589.77 tokens/s
+
+196.7K Output 419 tokens 15s 31.78 t/s
+
+#### MTP
+
+I did not run with MTP.
+
+**There is a performance issue on the MTP heads** it seems those are not trained and the throughput is not good.
+
+Actually it is not a problem, because the model does not fit in the GPU and with MoE offloading you have to balance the GPU VRAM to keep the KV Cache in the GPU so not having the MTP gives more context, or you can offload less MoE on the CPU/RAM and have higher throughput.
+
+### Observations
+
+It is very usable without MTP and a large context. There is a large throughput slowdown when using the 240K context.
+
+### 3-bit quantization
+
+I am using a variant from `AtomicChat/Ornith-1.5-35B-A3B-GGUF`
+
+- Ornith-1.5-35B-A3B-AD-IQ4_XS-IQ3_S (*NB*: MTP not shipped with the model, separated.)
+
+#### IQ4_XS-IQ3_S
+
+The model does not fit in VRAM few layers are off-loaded.
+
+##### 32K
+
+```bash
+llama-server -m ..\Ornith-1.5-35B-A3B-AD-IQ4_XS-IQ3_S.gguf"  
+--ctx-size 32768 -fa on  --cache-type-k q4_0 --cache-type-v q4_0  
+--parallel 1 --temp 0.6 --top-p 0.95 --top-k 20 --n-cpu-moe 4
+```
+
+Prompt 1: Output 2,911 tokens, 34s, 84.94 t/s
+
+Prompt 2: Output 1,049 tokens, 12s, 84.83 t/s
+
+Prompt 3: Output 1,400 tokens, 16s, 84.25 t/s
+
+VRAM used: 15.6 GB (200 MB Offload)
+
+*Note*: Lot of thinking, lot of tokens.
+
+##### 128K
+
+```bash
+llama-server -m ..\Ornith-1.5-35B-A3B-AD-IQ4_XS-IQ3_S.gguf  
+--ctx-size 131072 -fa on  --cache-type-k q4_0 --cache-type-v q4_0  
+--parallel 1 --temp 0.6 --top-p 0.95 --top-k 20 --n-cpu-moe 7
+```
+
+Prompt 1: Output 1,392 tokens, 18s, 76.15 t/s
+
+Prompt 2: Output 910 tokens, 11s, 77.40 t/s
+
+Prompt 3: Output 2,448 tokens, 32s, 75.89 t/s
+
+VRAM used: 15.6 GB (200 MB Offload)
+
+Add 49667 tokens 40s 1229.67 tokens/s
+
+51.6K Output: 929 tokens, 16s, 56.50 t/s
+
+Add 25032 tokens 23s 1045.43 tokens/s
+
+76.2K Output: 494 tokens,9.7s, 50.87 t/s
+
+#### Observations
+
+A bit faster but the throughput there is not a huge gap with respect to the official Q4 when the offloading is enabled. We still have a small offloading to the CPU/MEM. For larger context, you need to increase further the number of MoE offloaded.
 
 # 16. Models and Files Tested
 
@@ -2549,6 +2683,11 @@ Dynamic Quant V2.0
 Dynamic Quant V3.0
 
 - `Qwen3.8-27B-UD-IQ3_S`
+
+## Ornith 1.5 35B A3B
+
+- `ornith-ai/Ornith-1.5-35B-Q4_K_M`
+- `AtomicChat/Ornith-1.5-35B-A3B-GGUF:AD-IQ4_XS-IQ3_S`
 
 # 17. Practical Recommendations
 
@@ -2757,3 +2896,7 @@ A single mid-range consumer GPU is now sufficient to run several state-of-the-ar
 **21/08/2026**
 
 - Evaluate new Unsloth Qwen 3.8 27B `Qwen3.8-27B-UD-IQ3_S`
+
+**22/08/2026**
+
+- Added Ornith 1.5 35B A3B `Q4_K_M` and `AtomicChat:AD-IQ4_XS-IQ3_S`
