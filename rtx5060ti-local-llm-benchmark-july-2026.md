@@ -2249,6 +2249,49 @@ I previously used **Q3\_K\_M + MTP-2** extensively at 32K context, typically get
 
 It also means **less context engineering is required**: fewer situations where I need to carefully manage the context, fork a session, or `merge` it back together. Of course, for long-running agentic sessions, forking and merging is still a good habit, but having 120K available gives much more breathing room.
 
+# ISTA DASLab
+
+This is another variant with 3-bits, with a dynamic quantification. There is no MTP head on it by default. [Link](https://huggingface.co/ISTA-DASLab/Qwen3.8-27B-GSQ-RCO-GGUF)
+
+## No MTP - 240 K
+
+```bash
+model = Qwen3.8-27B-GSQ-RCO-IQ3_XXS.gguf
+ctx-size = 240000
+n-gpu-layers = all
+flash-attn = on
+cache-type-k = q4_0
+cache-type-v = q4_0
+parallel = 1
+temp = 1.0
+top-p = 0.95
+top-k = 20
+min-p = 0.0
+presence-penalty = 0.0
+repeat-penalty = 1.0
+reasoning-effort = medium
+no-mmproj = true
+```
+
+Prompt 1 : 707 tokens 21s 32.55 t/s
+
+Prefilll: 97823 tokens Prefill Throughput:  564.02 tokens/s
+
+Prompt: 554 tokens 29s 18.52 t/s
+
+Prefilll: 97823 tokens Prefill Throughput: 330.20 tokens/s
+
+Prompt: 288 tokens 21s 13.15 t/s
+
+VRAM Used: 15.6 GB (Shared 400 MB)
+
+This is expected figures for this model. The key point is that this dynamic quant keep a lot of capabilities according, a bit better than Unsloth Dynamic Quant 3. Of course, this document is about what we can run and how fast.
+
+Waiting for the MTP version that should could.
+
+The advantage is to have a bit more context.
+
+
 # 15. Other Tested Models
 
 ## Ornith 1.0 35B
@@ -2684,6 +2727,11 @@ Dynamic Quant V3.0
 
 - `Qwen3.8-27B-UD-IQ3_S`
 
+Other variant ISTA-DASLab
+
+- `Qwen3.8-27B-GSQ-RCO-IQ3_XXS`
+
+
 ## Ornith 1.5 35B A3B
 
 - `ornith-ai/Ornith-1.5-35B-Q4_K_M`
@@ -2900,3 +2948,7 @@ A single mid-range consumer GPU is now sufficient to run several state-of-the-ar
 **22/08/2026**
 
 - Added Ornith 1.5 35B A3B `Q4_K_M` and `AtomicChat:AD-IQ4_XS-IQ3_S`
+
+**31/08/2026**
+
+- Add Qwen 3.8 27B variant for `IQ3_XXS GSQ RCO`
