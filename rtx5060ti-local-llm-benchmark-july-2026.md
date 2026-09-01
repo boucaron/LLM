@@ -1,6 +1,6 @@
 # Practical Local LLM Performance on an RTX 5060 Ti 16GB
 
-Tests conducted in July/August 2026.
+Tests conducted in July/August/September 2026.
 
 ## Introduction
 
@@ -2253,9 +2253,15 @@ It also means **less context engineering is required**: fewer situations where I
 
 This is another variant with 3-bits, with a dynamic quantification. There is no MTP head on it by default. [Link](https://huggingface.co/ISTA-DASLab/Qwen3.8-27B-GSQ-RCO-GGUF)
 
+We use the following quant with and without MTP:
+
+- Qwen3.8-27B-GSQ-RCO-IQ3_XXS
+- Qwen3.8-27B-GSQ-RCO-IQ3_XXS-mtp
+
 ## No MTP - 240 K
 
 ```bash
+[Qwen3.8-27B-GSQ-RCO-IQ3_XXS]
 model = Qwen3.8-27B-GSQ-RCO-IQ3_XXS.gguf
 ctx-size = 240000
 n-gpu-layers = all
@@ -2273,24 +2279,69 @@ reasoning-effort = medium
 no-mmproj = true
 ```
 
-Prompt 1 : 707 tokens 21s 32.55 t/s
+Prompt 1 : 1,155 tokens 38s 29.96 t/s
 
-Prefilll: 97823 tokens Prefill Throughput:  564.02 tokens/s
+Prompt 2 : 1,506 tokens 50s 29.81 t/s
 
-Prompt: 554 tokens 29s 18.52 t/s
+Prompt 3: 1,573 tokens 53s  29.53 t/s
 
-Prefilll: 97823 tokens Prefill Throughput: 330.20 tokens/s
+Prefilll: 97823 tokens 2min 55s 557.50 tokens/s
 
-Prompt: 288 tokens 21s 13.15 t/s
+Prompt: 655 tokens 35s 18.21 t/s
 
 VRAM Used: 15.6 GB (Shared 400 MB)
 
 This is expected figures for this model. The key point is that this dynamic quant keep a lot of capabilities according, a bit better than Unsloth Dynamic Quant 3. Of course, this document is about what we can run and how fast.
 
-Waiting for the MTP version that should could.
+Waiting for the MTP version that could be very interesting too.
 
-The advantage is to have a bit more context.
+The advantage is to have a more context.
 
+## MTP 2 - 170 K
+
+```bash
+[Qwen3.8-27B-GSQ-RCO-IQ3_XXS-mtp]
+model = Qwen3.8-27B-GSQ-RCO-IQ3_XXS-mtp.gguf
+ctx-size = 170000
+n-gpu-layers = all
+flash-attn = on
+cache-type-k = q4_0
+cache-type-v = q4_0
+parallel = 1
+temp = 1.0
+top-p = 0.95
+top-k = 20
+min-p = 0.0
+presence-penalty = 0.0
+repeat-penalty = 1.0
+reasoning-effort = medium
+no-mmproj = true
+spec-type = draft-mtp
+spec-draft-n-max = 2 
+
+```
+
+Prompt 1: 798 tokens 18s 42.93 t/s
+
+Prompt 2: 1,023 tokens 24s 41.85 t/s
+
+Prompt 3: 1,250 tokens 30s 40.65 t/s
+
+3.1K Additional Context: 99076 tokens 2min 57s  558.41 tokens/s
+
+Prompt: 638 tokens 25s 25.46 t/s
+
+Context Used: 101.2 K
+
+## Observations
+
+This new quant offers a very large context without MTP with 220K and a slight increase on the context too to 170K. The Unsloth 3B quant with MTP was limited to 120K, with this one we have 170K, which is a large increase of more than 40%; Without MTP we move from 180K to 240K respectively with a large increase of 33%. The MTP 2 with about 100K context is still nearly 40% faster in inference.
+
+## Recommendations
+
+**01/09/2026**: This non unform quantized model in '3-bits' with MTP is my new recommandation for the Qwen 3.8 27B. I used the Unsloth **IQ3\_S D3** variant for my daily coding and agentic use since it was out, great quant too. But I think this ISTA DASLab is a bit better, at least for my usage.
+
+A larger context is possible from 240K without MTP to 170K with MTP 2.
 
 # 15. Other Tested Models
 
@@ -2730,7 +2781,7 @@ Dynamic Quant V3.0
 Other variant ISTA-DASLab
 
 - `Qwen3.8-27B-GSQ-RCO-IQ3_XXS`
-
+- `Qwen3.8-27B-GSQ-RCO-IQ3_XXS-mtp`
 
 ## Ornith 1.5 35B A3B
 
@@ -2952,3 +3003,7 @@ A single mid-range consumer GPU is now sufficient to run several state-of-the-ar
 **31/08/2026**
 
 - Add Qwen 3.8 27B variant for `IQ3_XXS GSQ RCO`
+
+**01/09/2026**
+
+- Update `IQ3_XXS GSQ RCO` with MTP variant
