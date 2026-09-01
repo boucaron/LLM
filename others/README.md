@@ -5,7 +5,7 @@ llama-server -m ".cache\huggingface\hub\models--unsloth--Qwen3.8-27B-GGUF\snapsh
 ```
 
 ## Mini Ray Tracer
-I am back in 1992 with one of the first scene rendered on a 482 DX2 with the Vivid Ray Tracer
+I am back in 1992 with one of the first scene rendered on a 486 DX2 with the Vivid Ray Tracer
 
 Prompt: Provide inside a single html page a small raytracer that displays a scene with a sphere with reflexions with a checker on the ground and clouds in the back, everything should be in the single page. The raytracer is not using any api, you implement a software raytracer.
 
