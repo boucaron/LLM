@@ -27,6 +27,10 @@ Tests of recent GGUF models (Gemma 4 26B A4B, Qwen 3.x, LFM, Prism Bonsai, Ornit
 Practical local LLM performance on a dedicated 16 GB GPU.
 Explores aggressive 2-bit quantization, MTP speculative decoding, very large context windows (100K–256K), and CPU offloading of MoE layers. Highlights include ~80–105 t/s for 25–35B MoE models fully in VRAM and ~130+ t/s with MTP.
 
+> Note: this is an extensive, detailed report (~3,000 lines). The summary above captures the key findings; the full report contains the complete methodology, per-configuration measurements, and analysis.
+>
+> Last updated **01/09/2026** — most recent additions: Qwen 3.8 27B in `IQ3_XXS GSQ RCO` (with MTP), Qwen 3.8 27B with Unsloth Dynamic Quant v3.0 (`UD-IQ3_S`), and Ornith 1.5 35B A3B.
+
 ## Benchmark scripts
 
 ### `scripts/`
