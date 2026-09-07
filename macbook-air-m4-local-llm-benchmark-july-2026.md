@@ -744,6 +744,33 @@ Prompt 2: Output 1068 tokens  16.48 t/s
 
 Prompt 3: Output 765 tokens 14.64 t/s
 
+## Tiel Coder 35B A3B GGUF
+Test performed on 07/09/2026.
+Using llama-b10813.
+
+This is a fine tune based on Ornith 1.5 35B A3B.
+I am using a Q3 bit variant without MTP.
+https://huggingface.co/peculiar-ragdoll/Tiel-Coder-35B-A3B-GGUF
+More specifically the UD-IQ3_XXS : https://huggingface.co/peculiar-ragdoll/Tiel-Coder-35B-A3B-GGUF?show_file_info=Tiel-Coder-35B-A3B-UD-IQ3_XXS.gguf
+
+```bash
+./llama-server 
+-m  Tiel-Coder-35B-A3B-UD-IQ3_XXS.gguf 
+--ctx-size 120000 
+-fa on --cache-type-k q4_0 --cache-type-v q4_0 
+-ngl 99 --parallel 1 
+--temp 1.0 --top-p 0.95 --top-k 20 --min-p 0.0 -np 1
+```
+
+Prompt 1: Output 620 tokens 23s 26.60 t/s
+
+Prompt 2: Output 887 tokens 33s 26.48 t/s
+
+Prompt 3: Output 1 035 tokens 39s 26.29 t/s
+
+I tried to keep capabilities while still having a descent context.
+You need to be super lean on the memory usage to run it.
+
 # Sustained Performance
 
 The MacBook Air is fanless, so sustained workloads behave differently from actively cooled systems:
@@ -795,3 +822,7 @@ These results should be viewed as practical guidance rather than absolute rankin
 01/08/2026
 
 - Add Ornith 1.0 9B
+
+07/09/2026
+
+- Add  Tiel Code 35B A3B
