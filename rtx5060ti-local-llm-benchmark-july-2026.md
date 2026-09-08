@@ -2295,7 +2295,7 @@ This is expected figures for this model. The key point is that this dynamic quan
 
 Waiting for the MTP version that could be very interesting too.
 
-The advantage is to have a more context.
+The advantage is to have more context.
 
 ## MTP 2 - 170 K
 
