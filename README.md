@@ -10,7 +10,7 @@ The focus is on **practical usability** of local models (inference speed, memory
 .
 ├── macbook-air-m4-local-llm-benchmark.md
 ├── rtx5060ti-local-llm-benchmark.md
-├── rtx5060ti-qwen3.8-27b-draft2-speculative-decoding.md
+├── rtx5060ti-qwen3.8-27b-dflash2-speculative-decoding.md
 ├── llamacpp/
 │   └── model.ini
 ├── scripts/
@@ -32,8 +32,8 @@ Explores aggressive 2-bit quantization, MTP speculative decoding, very large con
 >
 > Last updated **01/09/2026** — most recent additions: Qwen 3.8 27B in `IQ3_XXS GSQ RCO` (with MTP), Qwen 3.8 27B with Unsloth Dynamic Quant v3.0 (`UD-IQ3_S`), and Ornith 1.5 35B A3B.
 
-### [RTX 5060 Ti — Qwen 3.8 27B with Draft-2 speculative decoding](rtx5060ti-qwen3.8-27b-draft2-speculative-decoding.md)
-Focused study of Qwen 3.8 27B (GSQ RCO `IQ3_XXS`) with a DFlash2 draft model (Draft-2 speculative decoding) on the 16 GB RTX 5060 Ti, across context sizes 32K–162K on real coding tasks (game development in several languages).
+### [RTX 5060 Ti — Qwen 3.8 27B with DFlash2 speculative decoding](rtx5060ti-qwen3.8-27b-dflash2-speculative-decoding.md)
+Focused study of Qwen 3.8 27B (GSQ RCO `IQ3_XXS`) with a DFlash2 draft model (DFlash2 speculative decoding) on the 16 GB RTX 5060 Ti, across context sizes 32K–162K on real coding tasks (game development in several languages).
 Highlights: ~60–65 t/s at 32K–64K, ~40 t/s at 128K, and a drop to ~23 t/s at 162K where the combined dedicated + shared GPU memory footprint (~16.7 GB) exceeds the card's 16 GB VRAM and offloading becomes the dominant bottleneck.
 
 ## Benchmark scripts
@@ -71,9 +71,9 @@ Generates a deliberately long, repetitive text prompt used to fill large context
 | `JB_...GSQ-RCO-IQ3_XXS` | 240K | none |
 | `JBMTP_...GSQ-RCO-IQ3_XXS` | 170K | MTP (`draft-mtp`, n-max 2) |
 | `JBMT2P_...GSQ-RCO-IQ3_XXS` | 162K | MTP (`draft-mtp`, n-max 2, q4_0 draft KV cache) |
-| `JBDRAFT{Tiny,Small,Normal,Large,Big}_...GSQ-RCO-IQ3_XXS` | 32K / 64K / 96K / 128K / 162K | Draft-2 (`draft-dflash`, DFlash2 draft model, n-max 4) |
+| `JBDRAFT{Tiny,Small,Normal,Large,Big}_...GSQ-RCO-IQ3_XXS` | 32K / 64K / 96K / 128K / 162K | DFlash2 (`draft-dflash`, DFlash2 draft model, n-max 4) |
 
-The `JBDRAFT*` profiles are the configurations used in the [Draft-2 speculative decoding report](rtx5060ti-qwen3.8-27b-draft2-speculative-decoding.md) (`JBDRAFTBig` is the verbatim config quoted there).
+The `JBDRAFT*` profiles are the configurations used in the [DFlash2 speculative decoding report](rtx5060ti-qwen3.8-27b-dflash2-speculative-decoding.md) (`JBDRAFTBig` is the verbatim config quoted there).
 
 ## One-shot generation experiments
 
