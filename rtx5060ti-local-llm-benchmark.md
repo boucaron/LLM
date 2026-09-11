@@ -218,9 +218,28 @@ Fully GPU-resident Q3 configurations can reach around 40 t/s at 32K context and 
 
 This makes dense models particularly sensitive to the exact VRAM balance.
 
+Recent improvements in speculative drafters have changed this picture for dense models as well. With **DFlash 2** speculative decoding, the Qwen 3.8 27B dense model now reaches around **60 t/s** (ISTA `IQ3_XXS` main model with a DFlash2 draft and `spec-draft-n-max 4`, ~15.1 GB VRAM), compared with roughly **40–43 t/s** using MTP 2 on the same model — a gain of about 40–50%. Dense 27B models are therefore no longer capped at the ~40 t/s level, as long as the combined draft-model and KV-cache footprint stays within the 16 GB budget.
+
 ---
 
-# 7. Experimental Results
+# 7. Quantization Improvements: Non-Uniform Quantization Has Gotten Good
+
+This document is about throughput and usability, not model quality, but the quality of low-bit quantization is important enough to mention, because it directly changes which configuration is worth running.
+
+The capabilities of smaller quantizations have slightly increased in recent months. The main driver is **non-uniform quantization**: instead of applying a single quantization level to the entire model, each tensor or layer receives its own level, with the more sensitive parts kept at higher precision. The result is that a 2–3 bit model now retains noticeably more of the original model quality than a uniformly quantized model of the same nominal size.
+
+Two sources in particular provide such models, both tested here:
+
+* **Unsloth Dynamic Quant V3.0** — for example `Qwen3.8-27B-UD-IQ3_S`
+* **ISTA-DASLab (GSQ-RCO)** — for example `Qwen3.8-27B-GSQ-RCO-IQ3_XXS` and its MTP variant
+
+This is also why I ran experiments with **4-bit models plus CPU offloading** (for instance `Qwen3.6-35B-A3B IQ4_NL` with 16 MoE layers offloaded, and the `Qwen3.8-27B` IQ4 experiments): rather than accepting a heavy quality penalty to fit a model entirely in 16 GB, a higher-quality non-uniform quantization combined with a small amount of MoE offloading is often the better trade-off.
+
+In practice, these non-uniformly quantized models have become my daily drivers: the quality gain is real enough to matter day to day, while the throughput cost is small as long as the KV cache stays in VRAM.
+
+---
+
+# 8. Experimental Results
 
 The detailed experiments and measurements behind the practical recommendations above are in three companion files:
 
@@ -539,4 +558,6 @@ A single mid-range consumer GPU is now sufficient to run several state-of-the-ar
 - Add Qwen 3.8 27B variant for `IQ3_XXS GSQ RCO` MTP
 
 **11/09/2026**
-- Integration DFlash 2 experiments + Update tables 
+- Integration DFlash 2 experiments + Update tables
+- Updated section 6 (Dense Models) with the latest speculative-drafter figures: Qwen 3.8 27B reaches around 60 t/s with DFlash 2
+- Added section on non-uniform quantization improvements (Unsloth Dynamic Quant V3.0, ISTA-DASLab) and 4-bit offloading experiments 
