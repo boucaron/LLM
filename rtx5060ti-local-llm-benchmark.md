@@ -157,6 +157,7 @@ During testing, the CPU was never the limiting factor.
 * llama.cpp b10069 (CUDA 13.3)
 * llama-b10360 (CUDA 13.3) starting from Muse Gleemer
 * llama-b10472 (CUDA 13.3) starting from Qwen 3.8 27B
+* llama-b10658 - release *0.4.0* (CUDA 13.3) starting from DFlash 2 experiments
 
 ## Methodology
 
