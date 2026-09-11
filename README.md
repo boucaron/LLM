@@ -10,6 +10,8 @@ The focus is on **practical usability** of local models (inference speed, memory
 .
 ├── macbook-air-m4-local-llm-benchmark.md
 ├── rtx5060ti-local-llm-benchmark.md
+├── rtx5060ti-experimental-results.md
+├── rtx5060ti-qwen38-27b-experiments.md
 ├── rtx5060ti-qwen3.8-27b-dflash2-speculative-decoding.md
 ├── llamacpp/
 │   └── model.ini
@@ -26,10 +28,14 @@ Tests of recent GGUF models (Gemma 4 26B A4B, Qwen 3.x, LFM, Prism Bonsai, Ornit
 
 ### [RTX 5060 Ti — 16 GB](rtx5060ti-local-llm-benchmark.md)
 Practical local LLM performance on a dedicated 16 GB GPU.
-Explores aggressive 2-bit quantization, MTP speculative decoding, very large context windows (100K–256K), and CPU offloading of MoE layers. Highlights include ~80–105 t/s for 25–35B MoE models fully in VRAM and ~130+ t/s with MTP.
+The main report covers the methodology, key findings, trade-offs, and practical recommendations.
+Highlights: ~80–105 t/s for 25–35B MoE models fully in VRAM, ~130+ t/s with MTP, and very large context (100K–256K) with CPU offloading of MoE layers.
 
-> Note: this is an extensive, detailed report (~3,000 lines). The summary above captures the key findings; the full report contains the complete methodology, per-configuration measurements, and analysis.
->
+Companion files with the detailed per-configuration measurements:
+
+- [rtx5060ti-experimental-results.md](rtx5060ti-experimental-results.md) — Qwen 3.6 generation (27B, 35B A3B), Gemma 4 26B, Qwen 3 Coder 30B, other models, CPU offloading, reproducibility
+- [rtx5060ti-qwen38-27b-experiments.md](rtx5060ti-qwen38-27b-experiments.md) — Qwen 3.8 27B across D2/D3 quantizations and ISTA DASLab variants
+
 > Last updated **01/09/2026** — most recent additions: Qwen 3.8 27B in `IQ3_XXS GSQ RCO` (with MTP), Qwen 3.8 27B with Unsloth Dynamic Quant v3.0 (`UD-IQ3_S`), and Ornith 1.5 35B A3B.
 
 ### [RTX 5060 Ti — Qwen 3.8 27B with DFlash2 speculative decoding](rtx5060ti-qwen3.8-27b-dflash2-speculative-decoding.md)
