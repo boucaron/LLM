@@ -244,7 +244,7 @@ In practice, these non-uniformly quantized models have become my daily drivers: 
 The detailed experiments and measurements behind the practical recommendations above are in three companion files:
 
 * [rtx5060ti-experimental-results.md](rtx5060ti-experimental-results.md) — Qwen 3.6 generation, other models, CPU offloading and reproducibility
-* [rtx5060ti-qwen38-27b-experiments.md](rtx5060ti-qwen38-27b-experiments.md) — Qwen 3.8 27B (D2, D3, ISTA DASLab)
+* [rtx5060ti-qwen3.8-27b-experiments.md](rtx5060ti-qwen3.8-27b-experiments.md) — Qwen 3.8 27B (D2, D3, ISTA DASLab)
 * [rtx5060ti-qwen3.8-27b-dflash2-speculative-decoding.md](rtx5060ti-qwen3.8-27b-dflash2-speculative-decoding.md) — Qwen 3.8 27B with DFlash2 speculative decoding (32K–162K)
 
 ---
