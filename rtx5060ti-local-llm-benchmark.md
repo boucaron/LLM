@@ -535,3 +535,7 @@ A single mid-range consumer GPU is now sufficient to run several state-of-the-ar
 
 **01/09/2026**
 
+- Add Qwen 3.8 27B variant for `IQ3_XXS GSQ RCO` MTP
+
+**11/09/2026**
+- Integration DFlash 2 experiments + Update tables 
