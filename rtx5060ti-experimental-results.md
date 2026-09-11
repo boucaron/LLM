@@ -4,7 +4,7 @@ Detailed experiments and measurements behind the practical recommendations in [r
 
 ---
 
-## 7.1 Gemma 4 26B A4B
+# 1. Gemma 4 26B A4B
 
 ### 4-bit KV Cache, Flash Attention On
 
@@ -59,7 +59,7 @@ Subjectively, it felt effectively instantaneous during interactive use.
 
 ---
 
-## 7.2 Qwen 3.6 27B
+# 2. Qwen 3.6 27B
 
 ```bash
 llama-server.exe
@@ -107,7 +107,7 @@ The best results were with 2-way MTP; beyond that, it does not bring more throug
 
 ---
 
-## 7.3 Qwen 3.6 27B: 4-Bit and 3-Bit Quantization
+# 3. Qwen 3.6 27B: 4-Bit and 3-Bit Quantization
 
 The 2-bit models are fast, but there is a slight reduction in their capabilities.
 
@@ -118,7 +118,7 @@ I took the MTP variants from the Qwen3.6-27B-MTP-GGUF repository:
   * Q3\_K\_M with 13.8 GB
   * Q3\_K\_S with 12.6 GB
 
-### 4-Bit with Offloading
+## 4-Bit with Offloading
 
 This dense model has **64 layers**, which is important for the offloading experiment.
 
@@ -157,11 +157,11 @@ Once I pushed as much as possible onto the GPU, at the cost of VRAM and context 
 
 Offloading dense models like this one puts a lot of stress on the relatively slow PCIe link and the CPU/memory subsystem.
 
-### 3-Bit Experiments
+## 3-Bit Experiments
 
 Following the previous case, where it matters a lot to fit as much as possible of the dense model on the GPU, I took a 3-bit version of the model.
 
-#### Q3\_K\_M
+### Q3\_K\_M
 
 ```bash
 llama-server.exe
@@ -191,7 +191,7 @@ It is an important gain to use MTP in this context, with some cost in VRAM.
 
 The context is limited for this variant of the 3-bit model. I managed to put above 75K tokens in context, but above a threshold the KV cache is offloaded to CPU RAM and performance degrades a lot, to around 9 t/s.
 
-#### Q3\_K\_S
+### Q3\_K\_S
 
 ```bash
 llama-server.exe
@@ -222,7 +222,7 @@ This demonstrates that reducing model size slightly can be more valuable than ex
 
 ---
 
-## 7.4 Qwen 3 Coder 30B A3B Instruct
+# 4. Qwen 3 Coder 30B A3B Instruct
 
 ```bash
 llama-server.exe
@@ -253,7 +253,7 @@ The coding model maintained around 80 t/s while producing relatively concise res
 
 ---
 
-## 7.5 Qwen 3.6 35B A3B
+# 5. Qwen 3.6 35B A3B
 
 ```bash
 llama-server
@@ -299,7 +299,7 @@ There is no further improvement in throughput beyond two draft tokens.
 
 ---
 
-# 8. Qwen 3.6 35B A3B: Higher-Quality 4-Bit Quantization
+# 6. Qwen 3.6 35B A3B: Higher-Quality 4-Bit Quantization
 
 The IQ4\_NL model is about 18 GB without any KV cache, so it cannot fit entirely in the 16 GB GPU.
 
@@ -374,7 +374,7 @@ The results suggest that PCIe transfers and/or CPU memory bandwidth become impor
 
 ---
 
-# 9. Qwen 3.6 35B A3B: CPU Offloading + MTP
+# 7. Qwen 3.6 35B A3B: CPU Offloading + MTP
 
 I then took the MTP variant of the previous model.
 
@@ -460,7 +460,7 @@ When CPU offloading is already the dominant constraint, MTP no longer provides t
 
 ---
 
-# 10. CPU Offloading and Context Size
+# 8. CPU Offloading and Context Size
 
 The next experiment was to see how CPU offloading behaves as context size increases.
 
@@ -569,7 +569,7 @@ The main observation is that very large context is possible, but throughput prog
 
 ---
 
-# 11. Qwen 3.6 35B A3B: 3-Bit Quantization
+# 9. Qwen 3.6 35B A3B: 3-Bit Quantization
 
 This is the most interesting combination for squeezing the 35B A3B model into a 16 GB GPU.
 
@@ -577,7 +577,7 @@ I used the Qwen3.6-35B-A3B-UD-IQ3\_S model from Unsloth.
 
 The 3-bit version fits fully on the GPU at smaller context sizes, leaving more VRAM available for the KV cache than the 4-bit version.
 
-## No MTP
+## 9.1 No MTP
 
 ```bash
 llama-server
@@ -621,7 +621,7 @@ At 256K context there is major offloading of the KV cache to CPU memory, which k
 
 ---
 
-## 11.1 256K Context — Offloading MoE Layers
+## 9.2 256K Context — Offloading MoE Layers
 
 The interesting question is whether we can recover the lost throughput by moving a small number of MoE layers to CPU memory instead of allowing the KV cache to spill into CPU memory.
 
@@ -681,7 +681,7 @@ This gives about a 10% throughput increase while keeping the KV cache in VRAM.
 
 ---
 
-## 11.2 MTP 1
+## 9.3 MTP 1
 
 ```bash
 llama-server
@@ -764,7 +764,7 @@ We are past the threshold. It is a bit too much, and throughput starts to degrad
 
 ---
 
-## 11.3 MTP 2
+## 9.4 MTP 2
 
 ```bash
 llama-server
@@ -815,7 +815,7 @@ The throughput remains very good even at 128K and 256K context.
 
 ---
 
-# 12. Offloading to CPU Memory with 4-Bit Quantization
+# 10. Offloading to CPU Memory with 4-Bit Quantization
 
 The 4-bit Qwen3.6-35B-A3B model does not fit entirely in GPU VRAM.
 
@@ -855,13 +855,13 @@ These figures show how much model can be moved to CPU memory while retaining usa
 
 ---
 
-# 13. Reproducibility: Suspend/Resume Can Affect Performance
+# 11. Reproducibility: Suspend/Resume Can Affect Performance
 
 On this system, Windows suspend/resume can reduce inference performance.
 
 Final benchmark results were therefore collected after a fresh reboot.
 
-### Post-Suspend Performance
+## 11.1 Post-Suspend Performance
 
 
 | CPU MoE |    VRAM |  MTP 2 + KV Q4 |
@@ -878,7 +878,7 @@ Final benchmark results were therefore collected after a fresh reboot.
 |      16 | 12.0 GB |   **\~50 t/s** |
 |      18 | 11.3 GB | **48–49 t/s** |
 
-### Post-Reboot Performance
+## 11.2 Post-Reboot Performance
 
 
 | CPU MoE |    VRAM |  MTP 2 + KV Q4 |
@@ -899,7 +899,7 @@ For CPU-offloaded Qwen3.6-35B-A3B IQ4\_NL, MTP provides little additional benefi
 
 ---
 
-# 15. Other Tested Models
+# 12. Other Tested Models
 
 ## Ornith 1.0 35B
 
@@ -1139,7 +1139,7 @@ I used the official 4-bit quantization from ornith-ai.
 #### No MTP
 
 ```bash
-lama-server -m ..\Ornith-1.5-35B-Q4_K_M.gguf
+llama-server -m ..\Ornith-1.5-35B-Q4_K_M.gguf
  --ctx-size 32768 -fa on  --cache-type-k q4_0 --cache-type-v q4_0  
 --parallel 1 --temp 0.6 --top-p 0.95 --top-k 20 --n-cpu-moe 13
 ```
