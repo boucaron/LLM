@@ -8,8 +8,9 @@ The focus is on **practical usability** of local models (inference speed, memory
 
 ```
 .
-├── macbook-air-m4-local-llm-benchmark-july-2026.md
-├── rtx5060ti-local-llm-benchmark-july-2026.md
+├── macbook-air-m4-local-llm-benchmark.md
+├── rtx5060ti-local-llm-benchmark.md
+├── rtx5060ti-qwen3.8-27b-draft2-speculative-decoding.md
 ├── llamacpp/
 │   └── model.ini
 ├── scripts/
@@ -19,17 +20,21 @@ The focus is on **practical usability** of local models (inference speed, memory
 
 ## Benchmark reports
 
-### [MacBook Air M4 — 24 GB](macbook-air-m4-local-llm-benchmark-july-2026.md)
+### [MacBook Air M4 — 24 GB](macbook-air-m4-local-llm-benchmark.md)
 Practical local LLM performance on a fanless MacBook Air M4 (24 GB unified memory).
 Tests of recent GGUF models (Gemma 4 26B A4B, Qwen 3.x, LFM, Prism Bonsai, Ornith, GLM…) under sustained operation, with attention to thermal throttling, memory usage, and quantized KV cache.
 
-### [RTX 5060 Ti — 16 GB](rtx5060ti-local-llm-benchmark-july-2026.md)
+### [RTX 5060 Ti — 16 GB](rtx5060ti-local-llm-benchmark.md)
 Practical local LLM performance on a dedicated 16 GB GPU.
 Explores aggressive 2-bit quantization, MTP speculative decoding, very large context windows (100K–256K), and CPU offloading of MoE layers. Highlights include ~80–105 t/s for 25–35B MoE models fully in VRAM and ~130+ t/s with MTP.
 
 > Note: this is an extensive, detailed report (~3,000 lines). The summary above captures the key findings; the full report contains the complete methodology, per-configuration measurements, and analysis.
 >
 > Last updated **01/09/2026** — most recent additions: Qwen 3.8 27B in `IQ3_XXS GSQ RCO` (with MTP), Qwen 3.8 27B with Unsloth Dynamic Quant v3.0 (`UD-IQ3_S`), and Ornith 1.5 35B A3B.
+
+### [RTX 5060 Ti — Qwen 3.8 27B with Draft-2 speculative decoding](rtx5060ti-qwen3.8-27b-draft2-speculative-decoding.md)
+Focused study of Qwen 3.8 27B (GSQ RCO `IQ3_XXS`) with a DFlash2 draft model (Draft-2 speculative decoding) on the 16 GB RTX 5060 Ti, across context sizes 32K–162K on real coding tasks (game development in several languages).
+Highlights: ~60–65 t/s at 32K–64K, ~40 t/s at 128K, and a drop to ~23 t/s at 162K where the combined dedicated + shared GPU memory footprint (~16.7 GB) exceeds the card's 16 GB VRAM and offloading becomes the dominant bottleneck.
 
 ## Benchmark scripts
 
@@ -58,7 +63,17 @@ Generates a deliberately long, repetitive text prompt used to fill large context
 ## Llama.cpp configuration
 
 ### `llamacpp/model.ini`
-`llama-server` configuration profiles (version 1) for Qwen 3.8 27B variants (UD-IQ3_S and GSQ-RCO-IQ3_XXS), covering large context sizes (120K/240K), flash attention, q4_0 KV cache, MTP speculative decoding, and reasoning effort settings.
+`llama-server` configuration profiles (version 1) for Qwen 3.8 27B variants, all using flash attention, q4_0 KV cache, and medium reasoning effort:
+
+| Profile | Context | Speculative decoding |
+| --- | ---: | --- |
+| `Qwen3.8-27B-UD-IQ3_S` | 120K | MTP (`draft-mtp`, n-max 2) |
+| `JB_...GSQ-RCO-IQ3_XXS` | 240K | none |
+| `JBMTP_...GSQ-RCO-IQ3_XXS` | 170K | MTP (`draft-mtp`, n-max 2) |
+| `JBMT2P_...GSQ-RCO-IQ3_XXS` | 162K | MTP (`draft-mtp`, n-max 2, q4_0 draft KV cache) |
+| `JBDRAFT{Tiny,Small,Normal,Large,Big}_...GSQ-RCO-IQ3_XXS` | 32K / 64K / 96K / 128K / 162K | Draft-2 (`draft-dflash`, DFlash2 draft model, n-max 4) |
+
+The `JBDRAFT*` profiles are the configurations used in the [Draft-2 speculative decoding report](rtx5060ti-qwen3.8-27b-draft2-speculative-decoding.md) (`JBDRAFTBig` is the verbatim config quoted there).
 
 ## One-shot generation experiments
 
