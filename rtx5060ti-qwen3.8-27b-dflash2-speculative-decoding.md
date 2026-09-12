@@ -287,7 +287,7 @@ This suggests that the GPU is not simply using more of its available VRAM. It is
 
 This experiment demonstrates that **Qwen 3.8 27B GSQ RCO with DFlash2 speculative decoding can achieve exceptionally high coding throughput on an RTX 5060 Ti 16 GB**.
 
-> See also: [RTX 5060 Ti — 16 GB general benchmark report](rtx5060ti-local-llm-benchmark.md).
+> See also: [RTX 5060 Ti — 16 GB general benchmark report](rtx5060ti-local-llm-benchmark.md) and the [Qwen 3.8 27B experiments without speculative decoding](rtx5060ti-qwen3.8-27b-experiments.md) (quantization and context sweep for the same model).
 
 At moderate context sizes, the system can sustain approximately **60–65 t/s**, which is an impressive result for a 27B model on a 16 GB consumer GPU.
 

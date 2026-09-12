@@ -1265,6 +1265,17 @@ Context Used: 101.2 K
 
 This new quant offers a very large context without MTP with 240K and a slight increase on the context too to 170K with MTP. The Unsloth 3-bit quant with MTP was limited to 120K; with this one we have 170K, which is a large increase of more than 40%. Without MTP we move from 180K to 240K, a large increase of 33%. MTP 2 at about 100K context is still nearly 40% faster in inference.
 
+## DFlash2 Speculative Decoding
+
+A focused study of this model (ISTA DASLab GSQ RCO `IQ3_XXS`) with a DFlash2 draft model (`spec-type draft-dflash`, `n-max 4`, q4_0 KV cache for both main and draft) is documented in [rtx5060ti-qwen3.8-27b-dflash2-speculative-decoding.md](rtx5060ti-qwen3.8-27b-dflash2-speculative-decoding.md). Key results, on real coding tasks:
+
+* **32K–64K context: ~60–65 t/s** — the fastest configuration found for this model on the 16 GB RTX 5060 Ti, at 13.3–15.1 GB VRAM.
+* **96K context: ~40–45 t/s** — memory pressure starts to show (dedicated VRAM ~14.8–14.9 GB, shared GPU memory ~1.0 GB).
+* **128K context: ~40 t/s** — dedicated 15.0–15.1 GB + ~1.1 GB shared.
+* **162K context: ~23 t/s** — the combined dedicated + shared footprint (~16.7 GB) exceeds the 16 GB card, and offloading becomes the dominant bottleneck.
+
+The limiting factor at large context is therefore memory capacity and offloading overhead, not the speculative decoding efficiency itself.
+
 ## Recommendations
 
 There are several viable recipes depending on the context you need: **4-bit for smaller contexts, 3-bit for small to medium contexts, and 2-bit for medium to very large contexts.**
@@ -1276,6 +1287,7 @@ There are several viable recipes depending on the context you need: **4-bit for 
 - **IQ2_XXS (D2):** 220K context + MTP 2 (or MTP 1), up to \~200K usable, \~15 GB. Maximum context, at the cost of quality.
 - **UD-IQ3_S (D3):** 120K context + MTP 2, 40–43 t/s, 15.6 GB.
 - **ISTA DASLab GSQ-RCO:** 170K context + MTP 2, 40–43 t/s, or 240K without MTP.
+- **ISTA DASLab GSQ-RCO + DFlash2:** 32K–64K context, ~60–65 t/s, 13.3–15.1 GB. Fastest configuration for this model, but throughput degrades beyond 96K and drops to ~23 t/s at 162K (see the [DFlash2 report](rtx5060ti-qwen3.8-27b-dflash2-speculative-decoding.md)).
 
 The new **IQ3_S D3** variant is particularly interesting for daily coding and agentic use. With **MTP-2 and a 120K context**, I can reach around **50 t/s in real-world coding sessions**, while keeping the throughput remarkably consistent.
 
