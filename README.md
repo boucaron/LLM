@@ -89,6 +89,10 @@ Running `cd scripts && python context_gen.py` regenerates all four `context-*.tx
 
 The `JBDRAFT*` profiles are the configurations used in the [DFlash2 speculative decoding report](rtx5060ti-qwen3.8-27b-dflash2-speculative-decoding.md) (`JBDRAFTBig` is the verbatim config quoted there).
 
+## License
+
+Released under the [0BSD (Zero-clause BSD) license](LICENSE): use, copy, modify, and/or distribute for any purpose, with no conditions and no warranty.
+
 ## One-shot generation experiments
 
 ### `games/`
