@@ -49,10 +49,14 @@ Highlights: ~60–65 t/s at 32K–64K, a ~60 t/s burst at 128K dropping to ~40 t
 ### `scripts/`
 Self-contained bash benchmark scripts for the **MacBook Air M4** run, one per model. They are not portable to Linux/Windows — memory and swap measurement relies on macOS-specific commands (`sysctl vm.swapusage`, `memory_pressure`, `vm_stat`). Each script:
 
+All scripts are thin wrappers around the shared runner **`bench.sh`**: each one execs `bench.sh <name>`, and the per-model settings (model GGUF name, `llama-server` flags, optional binary path) live in **`scripts/configs/<name>.sh`**. Benchmarks can also be run directly with `./bench.sh <config>` (run with no argument to list the available configs).
+
+Each run:
+
 1. Locates its `llama-server` binary and model GGUF (expected in the parent directory, e.g. `../<model>.gguf`)
-2. Starts a `llama-server` instance with model-specific flags
+2. Starts a `llama-server` instance with the model-specific flags from its config
 3. Runs a set of prompts and measures generation throughput, memory usage, and swap/pressure
-4. Writes results to `scripts/results/`:
+4. Writes results to `scripts/results/` (gitignored):
    - `llama_benchmark_<timestamp>.csv` — benchmark numbers
    - `llama_output_<timestamp>.txt` — full transcript
 
