@@ -93,6 +93,23 @@ For comparison, the same benchmark achieved only about 4–6 t/s on the MacBook 
 
 ### MTP Variant
 
+```bash
+llama-server.exe
+    -m ..\Qwen3.6-27B-UD-IQ2_XXS_MTP.gguf
+    --ctx-size 32768
+    --temp 1.0
+    --top-p 0.95
+    --top-k 20
+    --min-p 0.00
+    -fa on
+    --cache-type-k q4_0
+    --cache-type-v q4_0
+    --chat-template-kwargs "{\"enable_thinking\":false}"
+    -np 1
+    -ngl 99
+    --spec-type draft-mtp --spec-draft-n-max 2
+```
+
 Prompt 1: Output 586 tokens, 12s, 47.42 t/s
 
 Prompt 2: Output 864 tokens, 17s, 50.10 t/s
@@ -211,8 +228,8 @@ Here the experiment is to check how much context we can put on the GPU without k
 |     32K | 13.5 → 13.7 GB |  Start:\~40 → @28K: \~36 t/s |
 |     64K | 14.4 → 14.6 GB |  Start:\~40 → @52K: \~31 t/s |
 |     96K | 15.5 → 15.5 GB |  Start:\~40 → @77K: \~27 t/s |
-|    128K | 15.6 → 15.6 GB | Start:\~37 → @111K: \~19 t/s |
 |    110K | 15.5 → 15.5 GB |  Start:\~40 → @77K: \~27 t/s |
+|    128K | 15.6 → 15.6 GB | Start:\~37 → @111K: \~19 t/s |
 
 The smaller Q3\_K\_S variant can maintain full GPU residency beyond 100K context, although generation throughput progressively decreases as the KV cache grows.
 
@@ -256,7 +273,7 @@ The coding model maintained around 80 t/s while producing relatively concise res
 # 5. Qwen 3.6 35B A3B
 
 ```bash
-llama-server
+llama-server.exe
 -m ..\Qwen3.6-35B-A3B-UD-IQ2_XXS.gguf
 -ngl 99
 --ctx-size 32768
@@ -332,6 +349,19 @@ VRAM used: 12.5 GB
 
 ## Offloading 12 MoE Layers
 
+Same command as above with `--n-cpu-moe 12`:
+
+```bash
+llama-server.exe
+-m ..\Qwen3.6-35B-A3B-UD-IQ4_NL.gguf
+--ctx-size 32768
+--temp 0.7 --top-p 0.80 --top-k 20 --min-p 0.00
+--repeat-penalty 1.00 --presence-penalty 1.5
+--chat-template-kwargs "{\"enable_thinking\":false}"
+-fa on -np 1
+--n-cpu-moe 12
+```
+
 Prompt 1: Output 653 tokens, 9.9s, 66.24 t/s
 
 Prompt 2: Output 1090 tokens, 16s, 65.77 t/s
@@ -342,6 +372,17 @@ VRAM used: 14 GB
 
 ## Offloading 20 MoE Layers
 
+```bash
+llama-server.exe
+-m ..\Qwen3.6-35B-A3B-UD-IQ4_NL.gguf
+--ctx-size 32768
+--temp 0.7 --top-p 0.80 --top-k 20 --min-p 0.00
+--repeat-penalty 1.00 --presence-penalty 1.5
+--chat-template-kwargs "{\"enable_thinking\":false}"
+-fa on -np 1
+--n-cpu-moe 20
+```
+
 Prompt 1: Output 487 tokens, 8.9s, 54.69 t/s
 
 Prompt 2: Output 874 tokens, 15s, 55.02 t/s
@@ -351,6 +392,17 @@ Prompt 3: Output 696 tokens, 12s, 55.13 t/s
 VRAM used: 11.2 GB
 
 ## Offloading 24 MoE Layers
+
+```bash
+llama-server.exe
+-m ..\Qwen3.6-35B-A3B-UD-IQ4_NL.gguf
+--ctx-size 32768
+--temp 0.7 --top-p 0.80 --top-k 20 --min-p 0.00
+--repeat-penalty 1.00 --presence-penalty 1.5
+--chat-template-kwargs "{\"enable_thinking\":false}"
+-fa on -np 1
+--n-cpu-moe 24
+```
 
 Prompt 1: Output 754 tokens, 15s, 49.84 t/s
 
@@ -580,7 +632,7 @@ The 3-bit version fits fully on the GPU at smaller context sizes, leaving more V
 ## 9.1 No MTP
 
 ```bash
-llama-server
+llama-server.exe
 -m ..\Qwen3.6-35B-A3B-UD-IQ3_S.gguf
 -ngl 99
 --ctx-size 32768
@@ -602,6 +654,20 @@ Prompt 3: Output 940 tokens, 9.1s, 102.96 t/s
 VRAM used: 15.4 GB
 
 ### 128K Context
+
+```bash
+llama-server.exe
+-m ..\Qwen3.6-35B-A3B-UD-IQ3_S.gguf
+-ngl 99
+--ctx-size 131072
+--temp 0.7 --min-p 0.0 --top-p 0.80 --top-k 20
+--repeat-penalty 1.00 --presence-penalty 1.5
+--chat-template-kwargs "{\"enable_thinking\":false}"
+-fa on
+--cache-type-k q4_0
+--cache-type-v q4_0
+-np 1
+```
 
 Prompt 1: Output 619 tokens, 6.2s, 99.04 t/s
 
@@ -628,7 +694,7 @@ The interesting question is whether we can recover the lost throughput by moving
 ### 8 MoE Layers Offloaded
 
 ```bash
-llama-server
+llama-server.exe
 -m ..\Qwen3.6-35B-A3B-UD-IQ3_S.gguf
 -ngl 99
 --ctx-size 262144
@@ -655,7 +721,7 @@ This means we can either increase the context size on the GPU or reduce the offl
 ### 4 MoE Layers Offloaded
 
 ```bash
-llama-server
+llama-server.exe
 -m ..\Qwen3.6-35B-A3B-UD-IQ3_S.gguf
 -ngl 99
 --ctx-size 262144
@@ -684,7 +750,7 @@ This gives about a 10% throughput increase while keeping the KV cache in VRAM.
 ## 9.3 MTP 1
 
 ```bash
-llama-server
+llama-server.exe
 -m ..\Qwen3.6-35B-A3B-UD-IQ3_S.gguf
 -ngl 99
 --ctx-size 32768
@@ -723,7 +789,7 @@ I did not run the 256K configuration without MoE offloading because we already k
 ### 8 MoE Layers Offloaded
 
 ```bash
-llama-server
+llama-server.exe
 -m ..\Qwen3.6-35B-A3B-UD-IQ3_S.gguf
 -ngl 99
 --ctx-size 262144
@@ -752,6 +818,22 @@ This is already a bit borderline for the available VRAM. The No MTP version with
 
 Trying to push further:
 
+```bash
+llama-server.exe
+-m ..\Qwen3.6-35B-A3B-UD-IQ3_S.gguf
+-ngl 99
+--ctx-size 262144
+--temp 0.7 --min-p 0.0 --top-p 0.80 --top-k 20
+--repeat-penalty 1.00 --presence-penalty 1.5
+--chat-template-kwargs "{\"enable_thinking\":false}"
+-fa on
+--cache-type-k q4_0
+--cache-type-v q4_0
+-np 1
+--spec-type draft-mtp --spec-draft-n-max 1
+--n-cpu-moe 6
+```
+
 Prompt 1: Output 641 tokens, 7.7s, 83.03 t/s
 
 Prompt 2: Output 1074 tokens, 12s, 84.47 t/s
@@ -767,7 +849,7 @@ We are past the threshold. It is a bit too much, and throughput starts to degrad
 ## 9.4 MTP 2
 
 ```bash
-llama-server
+llama-server.exe
 -m ..\Qwen3.6-35B-A3B-UD-IQ3_S.gguf
 -ngl 99
 --ctx-size 32768
@@ -1054,14 +1136,14 @@ MTP does not automatically improve throughput.
 I used the Unsloth variant in Muse-Glimmer-30B-UD-Q3_K_XL.gguf, the thinking mode is active, so it uses slightly more tokens and it has more latency.
 
 ```bash
-llama-server 
--m ..\Muse-Glimmer-30B-UD-Q3_K_XL.gguf  
---ctx-size 32768 
---temp 1.0 --top-p 0.95 --top-k 64  
--fa on  
---cache-type-k q4_0 --cache-type-v q4_0 
---n-gpu-layers all --n-gpu-layers-draft all 
---spec-type draft-dflash --spec-draft-p-min 0.2 --spec-draft-n-min 0 --spec-draft-n-max 3 
+llama-server.exe
+-m ..\Muse-Glimmer-30B-UD-Q3_K_XL.gguf
+--ctx-size 32768
+--temp 1.0 --top-p 0.95 --top-k 64
+-fa on
+--cache-type-k q4_0 --cache-type-v q4_0
+--n-gpu-layers all --n-gpu-layers-draft all
+--spec-type draft-dflash --spec-draft-p-min 0.2 --spec-draft-n-min 0 --spec-draft-n-max 3
 --parallel 1 --jinja
 ```
 
@@ -1076,45 +1158,45 @@ VRAM used: 12.6 GB
 This indicates significant VRAM headroom for context expansion.
 
 Pending further maturation of the software stack, these results are preliminary.
-*Update 21/08/2026*: Daily use Qwen 3.8 27B - more consistent for my tasks.
+I did not push further, because Qwen 3.8 27B is better and smaller.
 
 ## NVIDIA-Nemotron-3.5-Lightning-30B-A3B-GGUF
 
 I used the Bartowski variant in 4-bit IQ4\_XS for this one. CPU/MEM offloading is required to fit the model to retain most of its capabilities. The Bartowski variant also supports MTP if needed.
 
-Burst Mode (High Throughput)
+### Burst Mode (High Throughput)
 
 Burst mode with a small context and minimal offloading, I get around **95 t/s**:
 
 ```bash
-llama-server.exe 
--hf bartowski/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-GGUF:IQ4_XS 
--ngl 99  -np 1 
---cache-type-k q4_0 --cache-type-v q4_0 
---temp 0.6 --top-p 0.95  --min-p 0.01 
--c 32768 
+llama-server.exe
+-hf bartowski/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-GGUF:IQ4_XS
+-ngl 99  -np 1
+--cache-type-k q4_0 --cache-type-v q4_0
+--temp 0.6 --top-p 0.95  --min-p 0.01
+-c 32768
 --n-cpu-moe 8 --reasoning off
 ```
 
 Another Burst Mode variant gives around **90 t/s**, with slightly more offloading:
 
 ```bash
-llama-server.exe 
--hf bartowski/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-GGUF:IQ4_XS 
--ngl 99  --jinja -np 1 
---cache-type-k q4_0 --cache-type-v q4_0 --temp 1.0 --top-p 0.95 
+llama-server.exe
+-hf bartowski/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-GGUF:IQ4_XS
+-ngl 99  --jinja -np 1
+--cache-type-k q4_0 --cache-type-v q4_0 --temp 1.0 --top-p 0.95
 -c 32768 --n-cpu-moe 10
 ```
 
 Larger context 256 K:
 
 ```bash
-llama-server.exe 
--hf bartowski/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-GGUF:IQ4_XS 
--ngl 99  
---jinja -np 1 
---cache-type-k q4_0 --cache-type-v q4_0 
---temp 1.0 --top-p 0.95 -c 262144 
+llama-server.exe
+-hf bartowski/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-GGUF:IQ4_XS
+-ngl 99
+--jinja -np 1
+--cache-type-k q4_0 --cache-type-v q4_0
+--temp 1.0 --top-p 0.95 -c 262144
 --n-cpu-moe 13
 ```
 
@@ -1139,8 +1221,8 @@ I used the official 4-bit quantization from ornith-ai.
 #### No MTP
 
 ```bash
-llama-server -m ..\Ornith-1.5-35B-Q4_K_M.gguf
- --ctx-size 32768 -fa on  --cache-type-k q4_0 --cache-type-v q4_0  
+llama-server.exe -m ..\Ornith-1.5-35B-Q4_K_M.gguf
+ --ctx-size 32768 -fa on  --cache-type-k q4_0 --cache-type-v q4_0
 --parallel 1 --temp 0.6 --top-p 0.95 --top-k 20 --n-cpu-moe 13
 ```
 
@@ -1157,8 +1239,8 @@ VRAM used: 15.4 GB (200 MB Offload)
 ##### 128 K
 
 ```bash
-llama-server -m ..\Ornith-1.5-35B-Q4_K_M.gguf
- --ctx-size 131072 -fa on  --cache-type-k q4_0 --cache-type-v q4_0  
+llama-server.exe -m ..\Ornith-1.5-35B-Q4_K_M.gguf
+ --ctx-size 131072 -fa on  --cache-type-k q4_0 --cache-type-v q4_0
 --parallel 1 --temp 0.6 --top-p 0.95 --top-k 20 --n-cpu-moe 14
 ```
 
@@ -1174,13 +1256,13 @@ Adding 49182 tokens
 
 Prefill 1min 2s, 789.96 tokens/s
 
-53.7K Output 882 tokens 16s 53.45 t/s
+53.7K Output: 882 tokens, 16s, 53.45 t/s
 
 ##### 240 K
 
 ```bash
-llama-server -m ..\Ornith-1.5-35B-Q4_K_M.gguf
- --ctx-size 240000 -fa on  --cache-type-k q4_0 --cache-type-v q4_0  
+llama-server.exe -m ..\Ornith-1.5-35B-Q4_K_M.gguf
+ --ctx-size 240000 -fa on  --cache-type-k q4_0 --cache-type-v q4_0
 --parallel 1 --temp 0.6 --top-p 0.95 --top-k 20 --n-cpu-moe 15
 ```
 
@@ -1190,21 +1272,21 @@ Adding 97821 tokens
 
 Prefill 2min 15s, 723.77 tokens/s
 
-98.49K Output 666 tokens 15s 43.22 t/s
+98.49K Output: 666 tokens, 15s, 43.22 t/s
 
 Adding 97821 tokens
 
 Prefill 2min 45s, 589.77 tokens/s
 
-196.7K Output 419 tokens 15s 31.78 t/s
+196.7K Output: 419 tokens, 15s, 31.78 t/s
 
 #### MTP
 
 I did not run with MTP.
 
-**There is a performance issue on the MTP heads** it seems those are not trained and the throughput is not good.
+The MTP heads do not seem to be properly trained, so I did not pursue them further.
 
-Actually it is not a problem, because the model does not fit in the GPU and with MoE offloading you have to balance the GPU VRAM to keep the KV Cache in the GPU so not having the MTP gives more context, or you can offload less MoE on the CPU/RAM and have higher throughput.
+This is not a problem here, because the model does not fit in the GPU anyway: with MoE offloading you have to balance the GPU VRAM to keep the KV cache in the GPU, so skipping MTP leaves more context, or you can offload fewer MoE layers to the CPU/RAM and get higher throughput.
 
 ### Observations
 
@@ -1223,8 +1305,8 @@ The model does not fit in VRAM few layers are off-loaded.
 ##### 32K
 
 ```bash
-llama-server -m ..\Ornith-1.5-35B-A3B-AD-IQ4_XS-IQ3_S.gguf"  
---ctx-size 32768 -fa on  --cache-type-k q4_0 --cache-type-v q4_0  
+llama-server.exe -m ..\Ornith-1.5-35B-A3B-AD-IQ4_XS-IQ3_S.gguf
+--ctx-size 32768 -fa on  --cache-type-k q4_0 --cache-type-v q4_0
 --parallel 1 --temp 0.6 --top-p 0.95 --top-k 20 --n-cpu-moe 4
 ```
 
@@ -1241,8 +1323,8 @@ VRAM used: 15.6 GB (200 MB Offload)
 ##### 128K
 
 ```bash
-llama-server -m ..\Ornith-1.5-35B-A3B-AD-IQ4_XS-IQ3_S.gguf  
---ctx-size 131072 -fa on  --cache-type-k q4_0 --cache-type-v q4_0  
+llama-server.exe -m ..\Ornith-1.5-35B-A3B-AD-IQ4_XS-IQ3_S.gguf
+--ctx-size 131072 -fa on  --cache-type-k q4_0 --cache-type-v q4_0
 --parallel 1 --temp 0.6 --top-p 0.95 --top-k 20 --n-cpu-moe 7
 ```
 
@@ -1260,7 +1342,7 @@ Add 49667 tokens 40s 1229.67 tokens/s
 
 Add 25032 tokens 23s 1045.43 tokens/s
 
-76.2K Output: 494 tokens,9.7s, 50.87 t/s
+76.2K Output: 494 tokens, 9.7s, 50.87 t/s
 
 #### Observations
 
