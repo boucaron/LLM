@@ -68,6 +68,8 @@ Self-contained bash benchmark scripts, one per model. Each script:
 ### `scripts/context_gen.py`
 Generates a deliberately long, repetitive text prompt used to fill large context windows (up to 256K tokens) reproducibly, so that benchmarks test sustained inference performance rather than content quality.
 
+Running `cd scripts && python context_gen.py` regenerates all four `context-*.txt` files (32K/64K/128K/256K) in the `scripts/` directory; they are gitignored and kept out of the repository since they can be regenerated at any time.
+
 ## Llama.cpp configuration
 
 ### `llamacpp/model.ini`
