@@ -32,35 +32,35 @@ Even models that exceed the available VRAM at higher-quality quantization levels
 
 ## Quick benchmark summary
 
-*All entries use Q4 KV-cache quantization. Model quantization levels range from 2-bit to 4-bit depending on the configuration. For CPU-offloaded MoE models, VRAM reflects steady-state usage with MoE layers offloaded. The "headline" configuration is shown for each model.*
+*All entries use Q4 KV-cache quantization. Model quantization levels range from 2-bit to 4-bit depending on the configuration. For CPU-offloaded MoE models, VRAM reflects steady-state usage with MoE layers offloaded. The "headline" configuration is shown for each model. Avg t/s is the mean of three runs at 32K context; the larger-context rows show the start → end-of-context range instead. Star ratings are a subjective usability judgment on this system (5 = excellent daily driver, 3 = usable).*
 
 
-| Model                                        |      Avg t/s |    VRAM | Practical on 16 GB? |
-| --------------------------------------------- | -----------: | ------: | :-----------------: |
-| Gemma 4 26B A4B IQ2\_XXS                      |          \~90 | 10.9 GB |     ⭐⭐⭐⭐⭐     |
-| Qwen 3.6 27B IQ2\_XXS                        |          \~30 | 10.4 GB |     ⭐⭐⭐☆☆     |
-| Qwen 3.6 27B MTP IQ2\_XXS                    |          \~45 | 11.0 GB |     ⭐⭐⭐⭐☆     |
-| Qwen 3.6 27B Q3\_K\_M MTP 2                  |          \~41 | 14.8 GB |     ⭐⭐⭐⭐☆     |
-| Qwen 3 Coder 30B A3B Instruct IQ2\_XXS       |          \~75 | 11.5 GB |     ⭐⭐⭐⭐⭐     |
-| Qwen 3.6 35B A3B Instruct IQ2\_XXS           |          \~80 | 11.2 GB |     ⭐⭐⭐⭐⭐     |
-| Qwen 3.6 35B A3B Instruct MTP IQ2\_XXS       |         \~120 | 12.5 GB |     ⭐⭐⭐⭐⭐     |
-| Qwen 3.6 35B A3B IQ4\_NL (16 MoE off)        |          \~59 | 12.5 GB |     ⭐⭐⭐⭐☆     |
-| Qwen 3.6 35B A3B IQ3\_S MTP 2                |         \~125 | 15.6 GB |     ⭐⭐⭐⭐⭐     |
-| Qwen 3.8 27B Q3\_K\_M MTP 2                  |     \~35–42 | 14.7 GB |     ⭐⭐⭐⭐☆     |
-| Qwen 3.8 27B Q2\_K\_XL MTP 1                 |     \~39–42 | 15.3 GB |     ⭐⭐⭐⭐☆     |
-| Qwen 3.8 27B IQ2\_XXS MTP 2                  |     \~42–57 | 14.7 GB |     ⭐⭐⭐⭐☆     |
-| Qwen 3.8 27B D3 IQ3\_S MTP 2                 |     \~40–44 | 13.4 GB |     ⭐⭐⭐⭐⭐     |
-| Qwen 3.8 27B ISTA IQ3\_XXS MTP 2             |     \~40–43 | 15.6 GB |     ⭐⭐⭐⭐⭐     |
-| Qwen 3.8 27B ISTA IQ3\_XXS DFlash2 n-max 4  |     \~60–65 | 15.1 GB |     ⭐⭐⭐⭐⭐     |
-| Ornith 1.0 35B IQ2\_XXS                      |          \~90 | 11.8 GB |     ⭐⭐⭐⭐⭐     |
-| Ornith 1.0 9B                                |          \~60 |  6.8 GB |     ⭐⭐⭐⭐☆     |
-| Ornith 1.0 9B MTP                            |          \~80 |  7.4 GB |     ⭐⭐⭐⭐⭐     |
-| Ornith 1.5 35B A3B Q4\_K\_M                  |          \~72 | 15.4 GB |     ⭐⭐⭐⭐⭐     |
-| Ornith 1.5 35B A3B AD-IQ4\_XS-IQ3\_S         |          \~85 | 15.6 GB |     ⭐⭐⭐⭐⭐     |
-| KAT-Coder-V2.5-Dev IQ2\_XXS                  |          \~80 | 10.5 GB |     ⭐⭐⭐⭐⭐     |
-| Qwythos-9B-Claude-Mythos-5-1M MTP            |          \~80 |  7.7 GB |     ⭐⭐⭐⭐⭐     |
-| Muse-Glimmer-30B Q3\_K\_XL                   |          \~27 | 12.6 GB |     ⭐⭐⭐☆☆     |
-| NVIDIA Nemotron 3.5 Lightning 30B A3B IQ4\_XS|          \~90 | 15.4 GB |     ⭐⭐⭐⭐⭐     |
+| Model                                    |   Context   |      Avg t/s |         VRAM | Practical on 16 GB? |
+| ---------------------------------------- | :---------: | -----------: | -----------: | :-----------------: |
+| Gemma 4 26B A4B IQ2\_XXS                  |      32K    |          \~103 |      10.9 GB |     ⭐⭐⭐⭐⭐     |
+| Qwen 3.6 27B IQ2\_XXS                    |      32K    |             \~34 |      10.4 GB |     ⭐⭐⭐☆☆     |
+| Qwen 3.6 27B MTP IQ2\_XXS (n-max 2)      |      32K    |             \~49 |      11.0 GB |     ⭐⭐⭐⭐☆     |
+| Qwen 3.6 27B Q3\_K\_M MTP 2              |      32K    |             \~41 |      14.8 GB |     ⭐⭐⭐⭐☆     |
+| Qwen 3 Coder 30B A3B Instruct IQ2\_XXS   |      32K    |             \~82 |      11.5 GB |     ⭐⭐⭐⭐⭐     |
+| Qwen 3.6 35B A3B Instruct IQ2\_XXS       |      32K    |             \~86 |      11.2 GB |     ⭐⭐⭐⭐⭐     |
+| Qwen 3.6 35B A3B Instruct MTP IQ2\_XXS (n-max 2) | 32K | \~137 | 12.5 GB | ⭐⭐⭐⭐⭐ |
+| Qwen 3.6 35B A3B IQ4\_NL (16 MoE off)    |      32K    |             \~59 |      12.5 GB |     ⭐⭐⭐⭐☆     |
+| Qwen 3.6 35B A3B IQ3\_S MTP 2            |      32K    |            \~125 |      15.6 GB |     ⭐⭐⭐⭐⭐     |
+| Qwen 3.8 27B Q3\_K\_M MTP 2              |      32K    |        \~35–42 |      14.7 GB |     ⭐⭐⭐⭐☆     |
+| Qwen 3.8 27B Q2\_K\_XL MTP 1             |     172K    |        \~39–42 |      15.3 GB |     ⭐⭐⭐⭐☆     |
+| Qwen 3.8 27B IQ2\_XXS MTP 2              |     192K    |        \~42–57 |      14.7 GB |     ⭐⭐⭐⭐☆     |
+| Qwen 3.8 27B D3 IQ3\_S MTP 2             |      32K    |        \~40–44 |      13.4 GB |     ⭐⭐⭐⭐⭐     |
+| Qwen 3.8 27B ISTA IQ3\_XXS MTP 2         |     170K    |        \~40–43 |      15.6 GB |     ⭐⭐⭐⭐⭐     |
+| Qwen 3.8 27B ISTA IQ3\_XXS DFlash2 (n-max 4) | 32K–64K | \~60–65 | 13.3–15.1 GB | ⭐⭐⭐⭐⭐ |
+| Ornith 1.0 35B IQ2\_XXS                  |      32K    |            \~104 |      11.8 GB |     ⭐⭐⭐⭐⭐     |
+| Ornith 1.0 9B                            |      32K    |             \~69 |       6.8 GB |     ⭐⭐⭐⭐☆     |
+| Ornith 1.0 9B MTP (n-max 2)              |      32K    |             \~92 |       7.4 GB |     ⭐⭐⭐⭐⭐     |
+| Ornith 1.5 35B A3B Q4\_K\_M              |      32K    |             \~72 |      15.4 GB |     ⭐⭐⭐⭐⭐     |
+| Ornith 1.5 35B A3B AD-IQ4\_XS-IQ3\_S     |      32K    |             \~85 |      15.6 GB |     ⭐⭐⭐⭐⭐     |
+| KAT-Coder-V2.5-Dev IQ2\_XXS              |      32K    |             \~87 |      10.5 GB |     ⭐⭐⭐⭐⭐     |
+| Qwythos-9B-Claude-Mythos-5-1M MTP         |      32K    |             \~80 |       7.6 GB |     ⭐⭐⭐⭐⭐     |
+| Muse-Glimmer-30B Q3\_K\_XL                |      32K    |             \~27 |      12.6 GB |     ⭐⭐⭐☆☆     |
+| NVIDIA Nemotron 3.5 Lightning 30B A3B IQ4\_XS | 32K | \~90 | 15.4 GB | ⭐⭐⭐⭐⭐ |
 
 ## Practical configurations
 
@@ -249,7 +249,7 @@ The detailed experiments and measurements behind the practical recommendations a
 
 ---
 
-# 16. Models and Files Tested
+# 9. Models and Files Tested
 
 **Unless otherwise noted, GGUF models were downloaded from Unsloth.ai**.
 
@@ -327,7 +327,7 @@ Other variant ISTA-DASLab
 - `ornith-ai/Ornith-1.5-35B-Q4_K_M`
 - `AtomicChat/Ornith-1.5-35B-A3B-GGUF:AD-IQ4_XS-IQ3_S`
 
-# 17. Practical Recommendations
+# 10. Practical Recommendations
 
 After all these experiments, a few rules stand out.
 
@@ -399,7 +399,7 @@ A model that fits in 16 GB at 32K context may no longer behave the same way at 1
 
 ---
 
-# 18. Experiment Log
+# 11. Experiment Log
 
 The experiments started from a simple question: how far can a 16 GB GPU be pushed for local LLM inference?
 
@@ -447,7 +447,7 @@ This produces a much better overall result.
 
 ---
 
-# 19. Conclusions
+# 12. Conclusions
 
 The RTX 5060 Ti 16 GB proved to be an excellent entry point for local LLM inference.
 
