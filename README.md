@@ -38,11 +38,11 @@ Companion files with the detailed per-configuration measurements:
 - [rtx5060ti-experimental-results.md](rtx5060ti-experimental-results.md) — Qwen 3.6 generation (27B, 35B A3B), Gemma 4 26B, Qwen 3 Coder 30B, other models, CPU offloading, reproducibility
 - [rtx5060ti-qwen3.8-27b-experiments.md](rtx5060ti-qwen3.8-27b-experiments.md) — Qwen 3.8 27B across D2/D3 quantizations and ISTA DASLab variants
 
-> Last updated **01/09/2026** — most recent additions: Qwen 3.8 27B in `IQ3_XXS GSQ RCO` (with MTP), Qwen 3.8 27B with Unsloth Dynamic Quant v3.0 (`UD-IQ3_S`), and Ornith 1.5 35B A3B.
+> Last updated **12/09/2026** — most recent additions: Qwen 3.8 27B in `IQ3_XXS GSQ RCO` (with MTP and DFlash2), Qwen 3.8 27B with Unsloth Dynamic Quant v3.0 (`UD-IQ3_S`), and Ornith 1.5 35B A3B.
 
 ### [RTX 5060 Ti — Qwen 3.8 27B with DFlash2 speculative decoding](rtx5060ti-qwen3.8-27b-dflash2-speculative-decoding.md)
 Focused study of Qwen 3.8 27B (GSQ RCO `IQ3_XXS`) with a DFlash2 draft model (DFlash2 speculative decoding) on the 16 GB RTX 5060 Ti, across context sizes 32K–162K on real coding tasks (game development in several languages).
-Highlights: ~60–65 t/s at 32K–64K, ~40 t/s at 128K, and a drop to ~23 t/s at 162K where the combined dedicated + shared GPU memory footprint (~16.7 GB) exceeds the card's 16 GB VRAM and offloading becomes the dominant bottleneck.
+Highlights: ~60–65 t/s at 32K–64K, a ~60 t/s burst at 128K dropping to ~40 t/s as the context fills, and a drop to ~23 t/s at 162K where the combined dedicated + shared GPU memory footprint (~16.7 GB) exceeds the card's 16 GB VRAM and offloading becomes the dominant bottleneck.
 
 ## Benchmark scripts
 

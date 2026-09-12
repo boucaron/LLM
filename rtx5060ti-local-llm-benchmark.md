@@ -204,7 +204,7 @@ A different speculative-decoding approach is available through **DFlash 2**, whi
 
 On the Qwen 3.8 27B ISTA `IQ3_XXS` configuration, DFlash 2 with `spec-draft-n-max 4` reaches approximately **60–65 t/s** at 32K–64K context, compared to roughly **40–43 t/s** with MTP 2 on the same main model — a gain of around 40–50%.
 
-Throughput erodes as context grows, in line with the KV-cache pressure discussed elsewhere: around 40 t/s at 128K, dropping to ~23 t/s at 162K where the combined dedicated + shared GPU memory footprint (~16.7 GB) exceeds the 16 GB budget.
+Throughput erodes as context grows, in line with the KV-cache pressure discussed elsewhere: a ~60 t/s burst at 128K dropping to around 40 t/s as the context fills, then a further drop to ~23 t/s at 162K where the combined dedicated + shared GPU memory footprint (~16.7 GB) exceeds the 16 GB budget.
 
 See the dedicated report: [rtx5060ti-qwen3.8-27b-dflash2-speculative-decoding.md](rtx5060ti-qwen3.8-27b-dflash2-speculative-decoding.md).
 
