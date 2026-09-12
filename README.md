@@ -73,7 +73,7 @@ Running `cd scripts && python context_gen.py` regenerates all four `context-*.tx
 ## Llama.cpp configuration
 
 ### `llamacpp/model.ini`
-`llama-server` configuration profiles (version 1) for Qwen 3.8 27B variants, all using flash attention, q4_0 KV cache, and medium reasoning effort:
+`llama-server` configuration profiles (version 1) for Qwen 3.8 27B variants, tuned for the **RTX 5060 Ti 16 GB** run (VRAM-driven context sizes, CPU offloading of MoE layers), all using flash attention, q4_0 KV cache, and medium reasoning effort:
 
 | Profile | Context | Speculative decoding |
 | --- | ---: | --- |
