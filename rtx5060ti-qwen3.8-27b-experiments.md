@@ -1271,7 +1271,7 @@ A focused study of this model (ISTA DASLab GSQ RCO `IQ3_XXS`) with a DFlash2 dra
 
 * **32K–64K context: ~60–65 t/s** — the fastest configuration found for this model on the 16 GB RTX 5060 Ti, at 13.3–15.1 GB VRAM.
 * **96K context: ~40–45 t/s** — memory pressure starts to show (dedicated VRAM ~14.8–14.9 GB, shared GPU memory ~1.0 GB).
-* **128K context: ~40 t/s** — dedicated 15.0–15.1 GB + ~1.1 GB shared.
+* **128K context: ~60 t/s at the start, dropping to ~40 t/s when the context is nearly full (~98K used)** — dedicated 15.0–15.1 GB + ~1.1 GB shared.
 * **162K context: ~23 t/s** — the combined dedicated + shared footprint (~16.7 GB) exceeds the 16 GB card, and offloading becomes the dominant bottleneck.
 
 The limiting factor at large context is therefore memory capacity and offloading overhead, not the speculative decoding efficiency itself.
@@ -1280,7 +1280,7 @@ The limiting factor at large context is therefore memory capacity and offloading
 
 The right configuration depends on how much context you need:
 
-1. **Speed / medium-to-large context → DFlash2.** The fastest configuration found for this model: ~60–65 t/s at 32K–64K, ~40–45 t/s at 96K, ~40 t/s at 128K (ISTA DASLab GSQ-RCO `IQ3_XXS` + DFlash2 draft, 13.3–15.1 GB). Beyond 128K the combined dedicated + shared footprint approaches the card limit and drops to ~23 t/s at 162K (see the [DFlash2 report](rtx5060ti-qwen3.8-27b-dflash2-speculative-decoding.md)).
+1. **Speed / medium-to-large context → DFlash2.** The fastest configuration found for this model: ~60–65 t/s at 32K–64K, ~44–66 t/s at 96K, ~40–65 t/s at 128K (start → end of context; the end value drops to ~40 t/s as the context fills) (ISTA DASLab GSQ-RCO `IQ3_XXS` + DFlash2 draft, 13.3–15.1 GB). Beyond 128K the combined dedicated + shared footprint approaches the card limit and drops to ~23 t/s at 162K (see the [DFlash2 report](rtx5060ti-qwen3.8-27b-dflash2-speculative-decoding.md)).
 2. **Large context → MTP.** MTP 2 keeps the model fast well past the DFlash2 sweet spot: ISTA DASLab GSQ-RCO at 170K context, 40–43 t/s, 15.6 GB (UD-IQ3_S D3 at 120K is similar, 40–43 t/s).
 3. **Largest possible context → no speculative decoding.** A draft/MTP head consumes VRAM and layers; dropping speculation gives the maximum context: ISTA DASLab GSQ-RCO at 240K, or D2 `IQ2_XXS` at 220K (up to ~200K usable, ~15 GB), at the cost of quantization quality.
 
@@ -1299,6 +1299,6 @@ I previously used **Q3_K_M + MTP-2** extensively at 32K context, typically getti
 
 It also means **less context engineering is required**: fewer situations where I need to carefully manage the context, fork a session, or `merge` it back together. Of course, for long-running agentic sessions, forking and merging is still a good habit, but having 120K available gives much more breathing room.
 
-**12/09/2026:** My daily coding and agentic setup is now the same ISTA DASLab GSQ-RCO `IQ3_XXS` model with **DFlash2** and a **128K context**: sustained ~40 t/s, ~15.0–15.1 GB dedicated VRAM + ~1.1 GB shared. I get the DFlash2 speed benefit at smaller contexts while keeping a large 128K window, without paying the full VRAM cost of a 170K MTP-2 configuration.
+**12/09/2026:** My daily coding and agentic setup is now the same ISTA DASLab GSQ-RCO `IQ3_XXS` model with **DFlash2** and a **128K context**: generation starts at ~60 t/s and drops to ~40 t/s once the context is nearly full (~98K used, ~15.0–15.1 GB dedicated VRAM + ~1.1 GB shared). The MTP-2 variant with a larger context starts at ~40 t/s and only drops slightly after — but the DFlash2 burst speed in real sessions makes it my choice, with 128K still giving plenty of breathing room.
 
 A larger context is possible: from 240K without MTP to 170K with MTP 2.
