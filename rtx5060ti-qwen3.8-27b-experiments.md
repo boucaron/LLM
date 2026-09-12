@@ -1299,6 +1299,6 @@ I previously used **Q3_K_M + MTP-2** extensively at 32K context, typically getti
 
 It also means **less context engineering is required**: fewer situations where I need to carefully manage the context, fork a session, or `merge` it back together. Of course, for long-running agentic sessions, forking and merging is still a good habit, but having 120K available gives much more breathing room.
 
-**01/09/2026:** This non-uniform quantized model in 3-bits with MTP is my new recommendation for the Qwen 3.8 27B. I used the Unsloth **IQ3_S D3** variant for my daily coding and agentic use since it was out, great quant too. But I think this ISTA DASLab is a bit better, at least for my usage.
+**12/09/2026:** My daily coding and agentic setup is now the same ISTA DASLab GSQ-RCO `IQ3_XXS` model with **DFlash2** and a **128K context**: sustained ~40 t/s, ~15.0–15.1 GB dedicated VRAM + ~1.1 GB shared. I get the DFlash2 speed benefit at smaller contexts while keeping a large 128K window, without paying the full VRAM cost of a 170K MTP-2 configuration.
 
 A larger context is possible: from 240K without MTP to 170K with MTP 2.
