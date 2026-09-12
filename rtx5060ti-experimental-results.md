@@ -2,6 +2,8 @@
 
 Detailed experiments and measurements behind the practical recommendations in [rtx5060ti-local-llm-benchmark.md](rtx5060ti-local-llm-benchmark.md).
 
+**TL;DR:** Raw measurements and commands behind the benchmark report: 25–35B MoE models at ~80–105 t/s (Gemma 4 26B, Ornith 35B, Qwen 3.6 35B), ~137 t/s with MTP, and 128K+ context with 6–16 MoE layers offloaded to CPU while keeping VRAM at ~12–16 GB. Every section reproduces the exact `llama-server` flags, prompts, and measured t/s.
+
 ---
 
 # 1. Gemma 4 26B A4B

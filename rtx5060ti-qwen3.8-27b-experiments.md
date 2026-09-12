@@ -8,6 +8,8 @@ Test Dates: 19 to 21 Aug 2026 (Unsloth Dynamic Quant V 3.0)
 
 I would say this is a model that nearly all local LLM nerds have been waiting for, and it does not disappoint.
 
+**TL;DR:** Qwen 3.8 27B dense model on a 16 GB GPU: usable at ~35–57 t/s depending on quantization (IQ2_XXS → Q3_K_M) and MTP, with context scaling to 170K–192K once the KV cache is quantized and MTP keeps active parameters low. Unsloth Dynamic Quant v3.0 (`UD-IQ3_S`) + MTP is the sweet spot: ~40–44 t/s at 32K within ~13–16 GB VRAM. Full per-variant measurements and commands below.
+
 I used the following Unsloth variants (15 to 17 Aug 2026: **those models are no longer available**):
 
 * Qwen3.8-27B-IQ4\_NL

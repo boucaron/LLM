@@ -14,6 +14,8 @@ Because models generate different numbers of tokens, the **later** prompts are s
 
 This is a **practical inference benchmark**, not a synthetic one. The objective is to measure the experience of using these models interactively on a fanless laptop under realistic conditions, including long generations and thermal throttling.
 
+**TL;DR:** On a fanless MacBook Air M4 (24 GB unified memory), 25–35B MoE models are daily-drivable: Gemma 4 26B A4B sustains ~29 t/s, Qwen 3 Coder 30B A3B ~37 t/s, and Qwen 3.6 35B A3B ~27 t/s under sustained load, with throttling gradually dropping throughput toward ~20 t/s. Dense models are far less efficient per parameter (Qwen 3 14B: ~10 t/s), and a 27B dense model (Qwen 3.6) only runs at ~5 t/s with heavy swapping. Quantized KV cache saves 2–3 GB at a small throughput cost.
+
 This report focuses on generation throughput. Prompt processing (prefill) was not measured separately.
 
 Note that Apple Silicon uses unified memory shared between CPU and GPU, so the reported memory figures represent total system memory usage rather than dedicated GPU VRAM usage.

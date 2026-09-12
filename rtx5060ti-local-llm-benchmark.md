@@ -14,6 +14,8 @@ The main question is:
 
 > **How much LLM can you actually squeeze into a 16 GB GPU, and what trade-offs are required to do it?**
 
+**TL;DR:** A 16 GB GPU runs several 25–35B-class MoE models at highly interactive speeds: **80–105 t/s** with aggressive 2-bit quantization (model fully in VRAM), **~137 t/s** with MTP (Qwen 3.6 35B A3B, 12.5 GB), and **100K–256K context** by keeping the KV cache quantized (q4_0) in VRAM and offloading MoE layers to CPU. Dense models of comparable size are 3–5× slower. Detailed per-configuration numbers are in the companion files.
+
 The experiments started with very aggressive 2-bit quantization, then moved through different quantization levels, MTP, very large context sizes, and finally CPU offloading of MoE layers.
 
 The results are surprisingly practical: a 16 GB GPU can run several 25–35B-class sparse models at highly interactive speeds, and with the right combination of quantization, KV-cache settings and CPU offloading, very large context sizes are possible as well.
