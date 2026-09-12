@@ -4,7 +4,7 @@ A collection of practical local LLM experiments: benchmarking GGUF models with `
 
 The focus is on **practical usability** of local models (inference speed, memory/VRAM usage, thermal behavior) rather than model quality comparisons.
 
-**TL;DR:** Benchmarked 20+ GGUF models (7B–35B, dense and MoE) with `llama.cpp` on an RTX 5060 Ti 16 GB and a MacBook Air M4 24 GB. Key results: 25–35B MoE models run at **80–105 t/s fully in VRAM** at aggressive quantization, **~137 t/s with MTP**, and **100K–256K context** is possible via Q4 KV-cache + MoE CPU offloading. A 16 GB GPU is a genuinely practical local-LLM machine. All benchmarks are reproducible via the scripts in `scripts/`.
+**TL;DR:** Benchmarked 20+ GGUF models (7B–35B, dense and MoE) with `llama.cpp` on an RTX 5060 Ti 16 GB and a MacBook Air M4 24 GB. Key results: 25–35B MoE models run at **80–105 t/s fully in VRAM** at aggressive quantization, **~137 t/s with MTP**, and **100K–256K context** is possible via Q4 KV-cache + MoE CPU offloading. A 16 GB GPU is a genuinely practical local-LLM machine.
 
 ## Repository layout
 
@@ -47,7 +47,7 @@ Highlights: ~60–65 t/s at 32K–64K, a ~60 t/s burst at 128K dropping to ~40 t
 ## Benchmark scripts
 
 ### `scripts/`
-Self-contained bash benchmark scripts, one per model. Each script:
+Self-contained bash benchmark scripts for the **MacBook Air M4** run, one per model. They are not portable to Linux/Windows — memory and swap measurement relies on macOS-specific commands (`sysctl vm.swapusage`, `memory_pressure`, `vm_stat`). Each script:
 
 1. Locates its `llama-server` binary and model GGUF (expected in the parent directory, e.g. `../<model>.gguf`)
 2. Starts a `llama-server` instance with model-specific flags
