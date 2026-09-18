@@ -1,5 +1,17 @@
 # Context Engineering Primitives
 
+## Abstract
+
+This document proposes a small set of context primitives that let an LLM agent manage its own scarce context window. Two ideas are combined:
+
+1. **Forgetting without deleting.** The agent can mark a region of context (for example a debug session, a failed exploration, or a pointless experiment) and remove it from the active working context. The material is not destroyed; it remains in the immutable session history and can be restored. The LLM effectively evicts point-less material from its "RAM" while keeping persistent "disk" intact.
+
+2. **A function call over context.** The agent gets a tool like `context.call(prompt)` that behaves like a program: it explicitly prepares the context (via `context.push`), executes one LLM computation as the job, and returns a result that can be pushed back. The function's argument is not data but a constructed context — a child context the caller deliberately builds, not one inherited by forking.
+
+Mechanically, the primitives are exposed to the LLM as ordinary tools, while a runtime layer maintains an append-only immutable history and a materialized projection of it; nested calls are bounded by a depth limit. Together, `mark` / `deleteMarked`, `push`, and `call` make context a first-class, programmable resource instead of an incidental blob sent to the model — which is exactly what small, affordable local LLMs need, where every token matters.
+
+---
+
 ## 1. The underlying problem
 
 For an agent using a local/small LLM, the context window is a scarce resource.
