@@ -10,6 +10,31 @@ This document proposes a small set of context primitives that let an LLM agent m
 
 Mechanically, the primitives are exposed to the LLM as ordinary tools, while a runtime layer maintains an append-only immutable history and a materialized projection of it; nested calls are bounded by a depth limit. Together, `mark` / `deleteMarked`, `push`, and `call` make context a first-class, programmable resource instead of an incidental blob sent to the model — which is exactly what small, affordable local LLMs need, where every token matters.
 
+The design principles are stated in section 0, and the full minimal primitive set is summarized in section 26.
+
+---
+
+## 0. Design principles
+
+The goal of this document is **not** to claim a new idea. Each ingredient already exists elsewhere:
+
+* managed active/archival memory (MemGPT/Letta)
+* append-only logs + materialized views (event sourcing)
+* scoped, reversible operations (transactions, `with` blocks)
+
+The point is to combine them into **a small, orthogonal calculus for context** with four qualities:
+
+1. **Simple.** Four primitives: `mark`, `deleteMarked`, `push`, `call`. There is no separate primitive per operation; for example, summarization is just `call("Summarize...")`.
+2. **Predictable.** Each operation has exactly one meaning, and the system has a few invariants:
+   * history is immutable
+   * the working context is a projection of history plus pushed items
+   * eviction removes from the projection, never from history
+   * every context operation is itself recorded as an event
+3. **Composable.** All larger patterns — hierarchical planning, bottom-up synthesis, debugging sessions, map/reduce, subagents — are compositions of `push → call → push` and `mark → ... → deleteMarked`. Nothing is special-cased.
+4. **Easy to understand.** The whole model fits in two sentences: *history is persistent storage, context is RAM*, and *a call is a function whose argument is context*. That matters because the primary user of the primitives is itself an LLM, whose usefulness of the tools depends on the semantics being learnable.
+
+The contribution is therefore the combination: an immutable event log, a reversible projection, and four LLM-callable tools over it. The calculus is the product.
+
 ---
 
 ## 1. The underlying problem
@@ -52,7 +77,7 @@ This is particularly useful for affordable local LLMs, where context capacity is
 
 ---
 
-# 2. Immutable history vs mutable working context
+## 2. Immutable history vs mutable working context
 
 The central architectural principle is:
 
@@ -79,7 +104,7 @@ This means context manipulation is reversible in principle and does not destroy 
 
 ---
 
-# 3. Context GC / deletion
+## 3. Context GC / deletion
 
 The first primitive is context garbage collection:
 
@@ -125,7 +150,7 @@ This is more ergonomic than manually tracking every item that should eventually 
 
 ---
 
-# 4. Markers are a fundamental primitive
+## 4. Markers are a fundamental primitive
 
 The marker is more fundamental than `gc`.
 
@@ -164,7 +189,7 @@ is sufficient for an initial implementation.
 
 ---
 
-# 5. `context.push`
+## 5. `context.push`
 
 The second primitive is `push`.
 
@@ -190,7 +215,7 @@ This is a major part of the abstraction.
 
 ---
 
-# 6. `context.call`
+## 6. `context.call`
 
 The key primitive is:
 
@@ -239,7 +264,7 @@ Context + Prompt → Result
 
 ---
 
-# 7. Why this is not fork/merge
+## 7. Why this is not fork/merge
 
 The model is not necessarily:
 
@@ -279,7 +304,7 @@ That makes the model more general and cleaner.
 
 ---
 
-# 8. A debugging example
+## 8. A debugging example
 
 Suppose the agent does:
 
@@ -326,7 +351,7 @@ The main context is therefore kept small, while the complete debugging trajector
 
 ---
 
-# 9. `call()` is also a context transformation primitive
+## 9. `call()` is also a context transformation primitive
 
 `call()` is not limited to "ask another agent something".
 
@@ -353,7 +378,7 @@ This keeps the primitive set very small.
 
 ---
 
-# 10. Sequential composition is sufficient initially
+## 10. Sequential composition is sufficient initially
 
 This is an important simplification.
 
@@ -381,7 +406,7 @@ The abstraction is already useful with one sequential LLM call at a time.
 
 ---
 
-# 11. The natural generalization of `call`
+## 11. The natural generalization of `call`
 
 The primitive naturally extends to multiple cases.
 
@@ -432,7 +457,7 @@ However, **this does not need to be part of version one**.
 
 ---
 
-# 12. Hierarchical planning fits naturally
+## 12. Hierarchical planning fits naturally
 
 Hierarchical planning proceeds as follows:
 
@@ -471,7 +496,7 @@ This is one of the strongest reasons for making context a first-class object.
 
 ---
 
-# 13. Bottom-up reasoning also fits
+## 13. Bottom-up reasoning also fits
 
 The same model supports broader information-gathering patterns, such as looking across an entire codebase and collecting information bottom-up before doing a cross-cutting refactor.
 
@@ -495,7 +520,7 @@ It supports:
 
 ---
 
-# 14. Recursion is the main safety/runtime constraint
+## 14. Recursion is the main safety/runtime constraint
 
 Once `context.call()` exists, a call can potentially make another call:
 
@@ -537,7 +562,7 @@ This reinforces the fact that the initial system does not need complicated orche
 
 ---
 
-# 15. The difficult part: the projection
+## 15. The difficult part: the projection
 
 `context.call()` itself is relatively simple.
 
@@ -564,7 +589,7 @@ The working context is a materialized view/projection.
 
 ---
 
-# 16. Event log + materialized view
+## 16. Event log + materialized view
 
 The implementation follows the pattern:
 
@@ -608,7 +633,7 @@ so that every operation does not need to be replayed from the beginning.
 
 ---
 
-# 17. The resulting session architecture
+## 17. The resulting session architecture
 
 The architecture becomes roughly:
 
@@ -638,7 +663,7 @@ The working context is disposable and reconstructible.
 
 ---
 
-# 18. The context operations themselves can be events
+## 18. The context operations themselves can be events
 
 Operations such as:
 
@@ -669,7 +694,7 @@ This provides persistence without making the context itself the authoritative st
 
 ---
 
-# 19. How to expose the primitives to the LLM
+## 19. How to expose the primitives to the LLM
 
 A remaining design question is:
 
@@ -708,7 +733,7 @@ The runtime handles the actual projection mechanics.
 
 ---
 
-# 20. `context.call()` can look like an ordinary tool
+## 20. `context.call()` can look like an ordinary tool
 
 This is a particularly useful property.
 
@@ -743,7 +768,7 @@ It simply has a tool whose implementation happens to invoke another LLM inferenc
 
 ---
 
-# 21. Tool visibility can be scoped
+## 21. Tool visibility can be scoped
 
 `context.call()` does not necessarily need to be exposed recursively without limit.
 
@@ -766,7 +791,7 @@ This gives a clean mechanism for controlling recursion.
 
 ---
 
-# 22. `push` should remain simple
+## 22. `push` should remain simple
 
 Low-level session manipulation should not be exposed.
 
@@ -790,7 +815,7 @@ Those IDs can remain an implementation detail unless precise manipulation is req
 
 ---
 
-# 23. Markers reduce the need for IDs
+## 23. Markers reduce the need for IDs
 
 The marker abstraction is particularly useful because of this.
 
@@ -820,7 +845,7 @@ This makes the API more natural for an LLM.
 
 ---
 
-# 24. UI implications
+## 24. UI implications
 
 The same abstraction can work interactively in a UI.
 
@@ -857,32 +882,15 @@ human-controlled context management
 
 ---
 
-# 25. Relationship to existing systems
+## 25. Relationship to existing systems
 
-Existing work, particularly **Letta/MemGPT**, is the closest conceptual relative.
+Section 0 already states the positioning, so this section only goes one step further.
 
-Letta separates active context from longer-term/archival information and supports editable memory blocks and retrieval.
-
-This demonstrates that the general problem of separating persistent information from active model context is well established.
-
-This formulation is more specifically centered around:
-
-```text
-immutable trajectory
-        +
-mutable context projection
-        +
-context.push()
-context.call()
-context.mark()
-context.deleteMarked()
-```
-
-The idea is therefore better described as a **specific context-computation/programming abstraction**, rather than as a new general idea of managed context.
+**Letta/MemGPT** is the closest conceptual relative: it separates active context from longer-term/archival information and supports editable memory blocks and retrieval. This document differs in the unit of management — a transient, explicitly scoped projection over an immutable trajectory — and in exposing the operations as tools the LLM itself calls.
 
 ---
 
-# 26. The minimal primitive set
+## 26. The minimal primitive set
 
 The whole system can be expressed compactly.
 
@@ -931,7 +939,7 @@ deleteMarked
 
 ---
 
-# 27. The deeper abstraction
+## 27. The deeper abstraction
 
 The strongest formulation is:
 
@@ -953,7 +961,7 @@ Instead of treating the prompt/context as an incidental blob that happens to be 
 
 ---
 
-# 28. Why this is particularly interesting for local LLMs
+## 28. Why this is particularly interesting for local LLMs
 
 For a large hosted model with a huge context window, brute-force inclusion of history can sometimes work reasonably well.
 
@@ -973,7 +981,7 @@ The LLM can effectively manage its own limited RAM.
 
 ---
 
-# 29. The likely first implementation in Pi
+## 29. The likely first implementation in Pi
 
 The Pi integration can therefore remain relatively small.
 
@@ -1014,7 +1022,7 @@ The biggest implementation subtlety is that the projection cannot blindly manipu
 
 ---
 
-# 30. What the first version deliberately does not need
+## 30. What the first version deliberately does not need
 
 The first version does **not** need:
 
@@ -1051,7 +1059,7 @@ That is enough to demonstrate the idea.
 
 ---
 
-# 31. The conceptual progression
+## 31. The conceptual progression
 
 The design can be condensed into this progression:
 
