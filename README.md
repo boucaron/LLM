@@ -16,6 +16,7 @@ The focus is on **practical usability** of local models (inference speed, memory
 ├── rtx5060ti-qwen3.8-27b-experiments.md
 ├── rtx5060ti-qwen3.8-27b-dflash2-speculative-decoding.md
 ├── context-engineering-practical-experiments.md
+├── context-engineering-primitives.md
 ├── llamacpp/
 │   └── model.ini
 ├── scripts/
@@ -61,6 +62,23 @@ Key ideas covered:
 - **Result passing instead of history passing** — hand over validated outputs and state, not full conversations
 - **Information lifecycle** — treat context items as stateful (created → active → superseded → archived), with supersession replacing stale assumptions
 - **Agent-system techniques** — externalized state, hierarchical context (progressive refinement), validation before promoting observations to the parent context, and **task checkpointing / state handoff** as a practical alternative to context compaction for long-running agents
+
+### [Context Engineering Primitives (early draft)](context-engineering-primitives.md)
+An early draft in which I explore how the LLM and the harness can be given a small set of
+context primitives — `context.push()`, `context.mark()` / `context.deleteMarked()`,
+and `context.call()` — such that the working context becomes an explicit, mutable
+**projection** of an immutable session history, rather than a raw contiguous slice of the
+conversation. This enables the agent to keep the context as small as it needs to be and
+more relevant to the current computation — removing temporary work (e.g. debugging
+trajectories) from the active context while retaining it in history — without ever
+destructively modifying the session.
+
+The draft covers the core model (immutable history + materialized projection, analogous to
+an append-only event log with a materialized view), the minimal primitive set
+(`push` / `mark`–`deleteMarked` / `call`), treating `call()` as a function whose argument
+is context, recursion limits (depth and call budgets), and exposing the primitives to the
+LLM as ordinary tool calls — with a note on how the projection must respect
+message/tool-call/tool-result structure to stay provider-compatible.
 
 ## Benchmark scripts
 
