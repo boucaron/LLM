@@ -1,6 +1,6 @@
 # LLM — Local LLM Experiments
 
-A collection of practical local LLM experiments: benchmarking GGUF models with `llama.cpp`, reusable benchmark scripts, server configurations, and one-shot HTML generation experiments.
+A collection of practical local LLM experiments: benchmarking GGUF models with `llama.cpp`, reusable benchmark scripts, server configurations, one-shot HTML generation experiments, and a practical study of context engineering for LLM agents.
 
 The focus is on **practical usability** of local models (inference speed, memory/VRAM usage, thermal behavior) rather than model quality comparisons.
 
@@ -15,6 +15,7 @@ The focus is on **practical usability** of local models (inference speed, memory
 ├── rtx5060ti-experimental-results.md
 ├── rtx5060ti-qwen3.8-27b-experiments.md
 ├── rtx5060ti-qwen3.8-27b-dflash2-speculative-decoding.md
+├── context-engineering-practical-experiments.md
 ├── llamacpp/
 │   └── model.ini
 ├── scripts/
@@ -43,6 +44,23 @@ Companion files with the detailed per-configuration measurements:
 ### [RTX 5060 Ti — Qwen 3.8 27B with DFlash2 speculative decoding](rtx5060ti-qwen3.8-27b-dflash2-speculative-decoding.md)
 Focused study of Qwen 3.8 27B (GSQ RCO `IQ3_XXS`) with a DFlash2 draft model (DFlash2 speculative decoding) on the 16 GB RTX 5060 Ti, across context sizes 32K–162K on real coding tasks (game development in several languages).
 Highlights: ~60–65 t/s at 32K–64K, a ~60 t/s burst at 128K dropping to ~40 t/s as the context fills, and a drop to ~23 t/s at 162K where the combined dedicated + shared GPU memory footprint (~16.7 GB) exceeds the card's 16 GB VRAM and offloading becomes the dominant bottleneck.
+
+## Context engineering
+
+### [Context Engineering: Practical Experiments](context-engineering-practical-experiments.md)
+A practical study of context engineering for LLMs and agent workflows: why context is a scarce resource, and the techniques for keeping it small and relevant rather than relying on compaction alone.
+
+Key ideas covered:
+
+- **Context as a working set** — a context should contain only what is needed *now*, not everything that might be needed later
+- **Selection / filtering** — relevance filtering, deduplication, removing stale or superseded information *before* it enters the context
+- **Progressive disclosure** — expose information only when the agent reaches the point where it needs it; prefer pointers to information over the information itself
+- **Compression vs. representation** — summarization, extraction, structuring, compilation, and canonicalization as distinct transformations; the best representation depends on the operation that will consume it
+- **Forking and context boundaries** — fork conversations to keep explorations and subtasks out of the parent context; boundaries act as both efficiency and correctness boundaries
+- **Task specification, isolated execution and merge** — compile a compact task spec, run each work item in a fresh context, and merge only outcomes back into the parent (scale: parent context stays constant regardless of the number of work items)
+- **Result passing instead of history passing** — hand over validated outputs and state, not full conversations
+- **Information lifecycle** — treat context items as stateful (created → active → superseded → archived), with supersession replacing stale assumptions
+- **Agent-system techniques** — externalized state, hierarchical context (progressive refinement), validation before promoting observations to the parent context, and **task checkpointing / state handoff** as a practical alternative to context compaction for long-running agents
 
 ## Benchmark scripts
 
