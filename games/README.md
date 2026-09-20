@@ -1,4 +1,6 @@
-One shot games made with super simple prompt with Qwen 3.8 27B 
+One shot games made with super simple prompt with Qwen 3.8 27B
+
+*Note:* the `Qwen3.8-27B-Q3_K_M.gguf` (Dynamic Quant V2.0) used below is no longer available from Unsloth; re-source an equivalent 3-bit Qwen 3.8 27B GGUF to reproduce these games.
 
 ```bash
 llama-server -m "unsloth--Qwen3.8-27B-GGUF\Qwen3.8-27B-Q3_K_M.gguf"  --ctx-size 32768 -fa on  --cache-type-k q4_0 --cache-type-v q4_0 --n-gpu-layers all --parallel 1 --temp 1.0 --top-p 0.95 --top-k 20 --min-p 0.0 --presence-penalty 0.0 --repeat-penalty 1.0 --spec-type draft-mtp --spec-draft-n-max 2 --reasoning-effort low

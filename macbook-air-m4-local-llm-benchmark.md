@@ -14,7 +14,7 @@ Because models generate different numbers of tokens, the **later** prompts are s
 
 This is a **practical inference benchmark**, not a synthetic one. The objective is to measure the experience of using these models interactively on a fanless laptop under realistic conditions, including long generations and thermal throttling.
 
-**TL;DR:** On a fanless MacBook Air M4 (24 GB unified memory), 25–35B MoE models are daily-drivable: Gemma 4 26B A4B sustains ~29 t/s, Qwen 3 Coder 30B A3B ~37 t/s, and Qwen 3.6 35B A3B ~27 t/s under sustained load, with throttling gradually dropping throughput toward ~20 t/s. Dense models are far less efficient per parameter (Qwen 3 14B: ~10 t/s), and a 27B dense model (Qwen 3.6) only runs at ~5 t/s with heavy swapping. Quantized KV cache saves 2–3 GB at a small throughput cost.
+**TL;DR:** On a fanless MacBook Air M4 (24 GB unified memory), 25–35B MoE models are daily-drivable: Gemma 4 26B A4B sustains ~29 t/s, Qwen 3 Coder 30B A3B ~37 t/s, and Qwen 3.6 35B A3B ~27 t/s under sustained load, with throttling gradually dropping throughput toward ~20 t/s. Dense models are far less efficient per parameter (Qwen 3 14B: ~10 t/s), and a 27B dense model (Qwen 3.6) only runs at ~5 t/s with heavy swapping. Quantized KV cache saves 2–3 GB at a small throughput cost. (LFM 2.5 8B A1B, the small MoE, sustains >60 t/s.)
 
 This report focuses on generation throughput. Prompt processing (prefill) was not measured separately.
 
@@ -37,7 +37,7 @@ After testing several recent GGUF models on a MacBook Air M4 (24 GB), I found th
 * **Qwen 3.5 9B** provides the best dense-model balance between speed and practical usability in this tests.
 * **Qwen 3 14B** is noticeably slower because it is a dense model: all 14B parameters participate in every token generation, unlike MoE models where only a subset of parameters are activated.
 * **Qwen 3.6 27B** exceeds the practical memory limits of a 24 GB Air and swaps heavily without KV cache quantization reduction.
-* **LFM 8B A1B** demonstrates how efficient MoE models can be, sustaining more than 60 tok/s.
+* **LFM 2.5 8B A1B** demonstrates how efficient MoE models can be, sustaining more than 60 tok/s.
 * **Prism Bonsai 27B** fits comfortably within memory limits, but it is too slow to be usable with about 10 to 6 tok/s.
 * **Qwen 3 Coder 30B A3B Instruct** was one of the fastest large models tested, combining high throughput (~37 tok/s) with strong coding-oriented behavior and low verbosity.
 * **Qwen 3.6 35B A3B** (set in instruct mode) is very fast too, it has a bit more knowledge than Qwen 3 Coder or Gemma 4 26B, and it delivers about 27 tok/s despite being the biggest. Its output is a bit more verbose than Qwen 3 Coder.
@@ -54,7 +54,7 @@ Reported memory usage refers to total system memory consumption, including backg
 | Qwen 3.5 9B                   | \~15        | Moderate     | ⭐⭐⭐⭐☆          |
 | Qwen 3 14B                    | \~10        | High         | ⭐⭐⭐☆☆          |
 | Gemma 4 12B                   | \~11        | Moderate     | ⭐⭐⭐☆☆          |
-| LFM 8B A1B                    | \~62        | Moderate     | ⭐⭐⭐⭐☆          |
+| LFM 2.5 8B A1B               | \~62        | Moderate     | ⭐⭐⭐⭐☆          |
 | Qwen 3.6 27B                  | \~5         | 22 GB        | ⭐⭐☆☆☆          |
 | Prism Bonsai 27B              | \~6 to ~10 | 17GB to 19GB | ⭐⭐⭐☆☆          |
 | Qwen 3 Coder 30B A3B Instruct | \~37        | 21GB         | ⭐⭐⭐⭐⭐          |
@@ -788,7 +788,7 @@ The MacBook Air is fanless, so sustained workloads behave differently from activ
 * Qwen 3 14B offers stronger dense-model behavior but at roughly one-third the throughput.
 * Qwen 3.6 27B fits in memory with some KV cache optimization but too slow to be usable.
 * Qwen 3.5 9B provides an excellent balance between capability and speed.
-* LFM 8B A1B demonstrates how efficient Mixture-of-Experts models can be on Apple Silicon.
+* LFM 2.5 8B A1B demonstrates how efficient Mixture-of-Experts models can be on Apple Silicon.
 * Prism Bonsai 27B fits well in the memory but the memory bandwidth requirement makes it not useful in practice with about 10 to 6 tok/s.
 * Qwen 3 Coder 30B A3B provided the snappier low-latency responsiveness, the answers are short, enabling higher context density, and very good balance on the perceived capability in those tests.
 * Qwen 3.6 35 A3B is very good too, less snappier than the Qwen 3 Coder, probably better than Gemma 4 26B A4B, but details of what you do matters more. A bit more memory usage.

@@ -1269,7 +1269,7 @@ This new quant offers a very large context without MTP with 240K and a slight in
 
 A focused study of this model (ISTA DASLab GSQ RCO `IQ3_XXS`) with a DFlash2 draft model (`spec-type draft-dflash`, `n-max 4`, q4_0 KV cache for both main and draft) is documented in [rtx5060ti-qwen3.8-27b-dflash2-speculative-decoding.md](rtx5060ti-qwen3.8-27b-dflash2-speculative-decoding.md). Key results, on real coding tasks:
 
-* **32K–64K context: ~60–65 t/s** — the fastest configuration found for this model on the 16 GB RTX 5060 Ti, at 13.3–15.1 GB VRAM.
+* **32K–64K context: ~60–65 t/s** — the fastest configuration found for this model on the 16 GB RTX 5060 Ti, at 13.3–14.2 GB VRAM.
 * **96K context: ~40–45 t/s** — memory pressure starts to show (dedicated VRAM ~14.8–14.9 GB, shared GPU memory ~1.0 GB).
 * **128K context: ~60 t/s at the start, dropping to ~40 t/s when the context is nearly full (~98K used)** — dedicated 15.0–15.1 GB + ~1.1 GB shared.
 * **162K context: ~23 t/s** — the combined dedicated + shared footprint (~16.7 GB) exceeds the 16 GB card, and offloading becomes the dominant bottleneck.
@@ -1280,8 +1280,8 @@ The limiting factor at large context is therefore memory capacity and offloading
 
 The right configuration depends on how much context you need:
 
-1. **Speed / medium-to-large context → DFlash2.** The fastest configuration found for this model: ~60–65 t/s at 32K–64K, ~44–66 t/s at 96K, ~40–65 t/s at 128K (start → end of context; the end value drops to ~40 t/s as the context fills) (ISTA DASLab GSQ-RCO `IQ3_XXS` + DFlash2 draft, 13.3–15.1 GB). Beyond 128K the combined dedicated + shared footprint approaches the card limit and drops to ~23 t/s at 162K (see the [DFlash2 report](rtx5060ti-qwen3.8-27b-dflash2-speculative-decoding.md)).
-2. **Large context → MTP.** MTP 2 keeps the model fast well past the DFlash2 sweet spot: ISTA DASLab GSQ-RCO at 170K context, 40–43 t/s, 15.6 GB (UD-IQ3_S D3 at 120K is similar, 40–43 t/s).
+1. **Daily driver / speed → DFlash2, 162K context.** My current daily coding and agentic setup (see the 12/09/2026 note below): ISTA DASLab GSQ-RCO `IQ3_XXS` + DFlash2 draft (`JBDRAFTBig` profile, 162K). Starts at ~60 t/s, stays around ~40 t/s in everyday use; the ~23 t/s regime only appears at the very top of context, where the combined dedicated + shared footprint (~16.7 GB) exceeds the card's 16 GB VRAM. In practice I don't hit that slowdown regularly, and 162K means I'm never stuck when a session needs a bit more context. The 32K–64K DFlash2 configuration remains the fastest found for this model (~60–65 t/s, 13.3–14.2 GB); at 96K–128K throughput ranges ~44–66 t/s (see the [DFlash2 report](rtx5060ti-qwen3.8-27b-dflash2-speculative-decoding.md)).
+2. **Large context → MTP.** MTP 2 keeps the model fast well past the DFlash2 sweet spot: ISTA DASLab GSQ-RCO at 170K context, 40–43 t/s, 15.6 GB. The earlier **IQ3_S D3** recipe (120K + MTP 2, 40–43 t/s, 15.6 GB) was my daily driver before the DFlash2 switch and remains a strong alternative when a slightly smaller context is enough.
 3. **Largest possible context → no speculative decoding.** A draft/MTP head consumes VRAM and layers; dropping speculation gives the maximum context: ISTA DASLab GSQ-RCO at 240K, or D2 `IQ2_XXS` at 220K (up to ~200K usable, ~15 GB), at the cost of quantization quality.
 
 Per-quantization recipes measured in this file:
@@ -1293,9 +1293,7 @@ Per-quantization recipes measured in this file:
 - **IQ2_XXS (D2):** 220K context + MTP 2 (or MTP 1), up to \~200K usable, \~15 GB. Maximum context, at the cost of quality.
 - **UD-IQ3_S (D3):** 120K context + MTP 2, 40–43 t/s, 15.6 GB.
 
-The new **IQ3_S D3** variant is particularly interesting for daily coding and agentic use. With **MTP-2 and a 120K context**, I can reach around **50 t/s in real-world coding sessions**, while keeping the throughput remarkably consistent.
-
-I previously used **Q3_K_M + MTP-2** extensively at 32K context, typically getting around **40–46 t/s**. Being able to move to a much larger context without sacrificing interactive usability is, for me, one of the biggest improvements.
+The **IQ3_S D3** variant was particularly interesting for daily coding and agentic use: with **MTP-2 and a 120K context**, I reached around **50 t/s in real-world coding sessions**, while keeping the throughput remarkably consistent. I previously used **Q3_K_M + MTP-2** extensively at 32K context, typically getting around **40–46 t/s**. Being able to move to a much larger context without sacrificing interactive usability was, for me, one of the biggest improvements.
 
 It also means **less context engineering is required**: fewer situations where I need to carefully manage the context, fork a session, or `merge` it back together. Of course, for long-running agentic sessions, forking and merging is still a good habit, but having 120K available gives much more breathing room.
 

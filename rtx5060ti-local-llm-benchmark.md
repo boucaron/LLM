@@ -521,7 +521,7 @@ A single mid-range consumer GPU is now sufficient to run several state-of-the-ar
 
 **11/08/2026**
 
-- Added Muse Gleemer in 3-bit quantization
+- Added Muse Glimmer in 3-bit quantization
 
 **12/08/2026**
 
