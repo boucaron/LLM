@@ -30,7 +30,7 @@ The focus is on **practical usability** of local models (inference speed, memory
 Practical local LLM performance on a fanless MacBook Air M4 (24 GB unified memory).
 Tests of recent GGUF models (Gemma 4 26B A4B, Qwen 3.x, LFM, Prism Bonsai, Ornith, GLM…) under sustained operation, with attention to thermal throttling, memory usage, and quantized KV cache.
 
-> Note: my daily driver on the Mac is [Tiel-Coder-35B-A3B-UD-IQ3-XXS](macbook-air-m4-local-llm-benchmark.md#tiel-coder-35b-a3b-gguf), a coding-tuned model running at ~26 t/s with a 120K context and a lean 23 GB footprint. It is a re-quantization of Ornith 1.5 35B A3B (Unsloth dynamic imatrix) with improvements for coding work and multi-turn conversations. It really pushes the memory envelope of the 24 GB MacBook Air — you need to be very lean on the remaining memory to run it.
+> Note: my daily driver on the Mac is [Tiel-Coder-35B-A3B-UD-IQ3-XXS](macbook-air-m4-local-llm-benchmark.md#tiel-coder-35b-a3b-gguf), a coding-tuned model running at ~26 t/s with a 120K context. It is a re-quantization of Ornith 1.5 35B A3B (Unsloth dynamic imatrix) with improvements for coding work and multi-turn conversations. It really pushes the memory envelope of the 24 GB MacBook Air — you need to be very lean on the remaining memory to run it.
 
 ### [RTX 5060 Ti — 16 GB](rtx5060ti-local-llm-benchmark.md)
 Practical local LLM performance on a dedicated 16 GB GPU.
