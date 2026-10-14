@@ -44,9 +44,28 @@ Companion files with the detailed per-configuration measurements:
 
 > Last updated **12/09/2026** — DFlash2 speculative-decoding integration and table updates for Qwen 3.8 27B (`IQ3_XXS GSQ RCO` with MTP and DFlash2). Earlier additions in the same report: Qwen 3.8 27B with Unsloth Dynamic Quant v3.0 (`UD-IQ3_S`), and Ornith 1.5 35B A3B (added 22/08/2026).
 
+
 ### [RTX 5060 Ti — Qwen 3.8 27B with DFlash2 speculative decoding](rtx5060ti-qwen3.8-27b-dflash2-speculative-decoding.md)
 Focused study of Qwen 3.8 27B (GSQ RCO `IQ3_XXS`) with a DFlash2 draft model (DFlash2 speculative decoding) on the 16 GB RTX 5060 Ti, across context sizes 32K–162K on real coding tasks (game development in several languages).
 Highlights: ~60–65 t/s at 32K–64K, a ~60 t/s burst at 128K dropping to ~40 t/s as the context fills, and a drop to ~23 t/s at 162K where the combined dedicated + shared GPU memory footprint (~16.7 GB) exceeds the card's 16 GB VRAM and offloading becomes the dominant bottleneck.
+
+
+## RTX 5060 Ti — Qwen 3.8 Flash Next with Strata
+
+> **Last updated: 02/10/2026** — Running Qwen 3.8 Flash Next with the ISTA-DASLAB GQS RCO `IQ3_XXS` quantization on my RTX 5060 Ti, this has become my new daily driver. Thanks to Strata by Niko1221 ([GitHub repository](https://github.com/Niko1221/Strata)), I’m achieving around **60 tokens/s at 128K context**, with peaks of up to **85 tokens/s** on my 64 GB PC. I also managed to reach **200K context using 4-bit quantization**, with similar performance.
+
+## RTX 5070 Ti — Qwen 3.8 Flash Next with Strata
+
+> **Last updated: 14/10/2026** — I upgraded the GPU in my daily driver to an RTX 5070 Ti, keeping the same system memory capacity. With roughly twice the compute performance and memory bandwidth, I’m still running Qwen 3.8 Flash Next with `IQ3_XXS GSQ RCO` quantization, powered by Strata, an excellent inference engine.
+
+**Another significant step forward!**
+
+**Highlights:**
+- Around **100 tokens/s at 205K context**
+- Peak performance of up to **150 tokens/s**
+
+Strata continues to deliver excellent inference performance, making this upgrade a worthwhile improvement for my daily local LLM setup.
+
 
 ## Context engineering
 
