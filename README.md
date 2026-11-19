@@ -101,6 +101,28 @@ is context, recursion limits (depth and call budgets), and exposing the primitiv
 LLM as ordinary tool calls — with a note on how the projection must respect
 message/tool-call/tool-result structure to stay provider-compatible.
 
+### [ScopedChat](https://github.com/boucaron/ScopedChat) — a small POC: the context as a curatable artifact
+A tiny Vue 3 + Vite proof-of-concept I built to make the ideas above concrete: a chat app where the
+items of a session can be **removed from — and restored to — the model's context without ever being
+deleted from the session**, i.e. the working context as an explicit, mutable **projection** of an
+immutable history (the same shape as the [context primitives](context-engineering-primitives.md) draft
+above, with the user as the curator).
+
+Three operations on that projection:
+
+- **Remove / restore** — drop a turn from the model's context while keeping it stored, and bring it back any time (`hideItems` / *Restore*) — the `mark` / `deleteMarked` pair of the primitives draft, applied by hand
+- **Inline edit** — modify a turn; the turns that follow it are superseded and hidden from the context, but remain restorable
+- **Fork, and selective fork** — the classic fork (whole session, source untouched) plus a variant where you choose exactly which items the new context carries
+
+It stays honest about what the model actually sees: the single `buildMessages()` that renders the
+visible *Working memory* panel is the same list POSTed to the model, so the context is always visible
+and editable instead of implicit. Priorities in that order: **quality** first (don't contaminate the
+model with stale, contradictory or wrong turns), then **size**, then **performance**.
+
+Local inference throughout — it POSTs to a `llama.cpp` OpenAI-compatible server
+(`/v1/chat/completions`, SSE streaming), with an *OpenAI mode* toggle for plain OpenAI-compatible
+backends (vLLM, LM Studio, LiteLLM). TypeScript, Vitest suite, no UI framework, 0BSD like this repo.
+
 ## Benchmark scripts
 
 ### `scripts/`
