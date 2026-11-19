@@ -56,12 +56,12 @@ Highlights: ~60–65 t/s at 32K–64K, a ~60 t/s burst at 128K dropping to ~40 t
 
 ## RTX 5070 Ti — Qwen 3.8 Flash Next with Strata
 
-> **Last updated: 14/10/2026** — I upgraded the GPU in my daily driver to an RTX 5070 Ti, keeping the same system memory capacity. With roughly twice the compute performance and memory bandwidth, I’m still running Qwen 3.8 Flash Next with `IQ3_XXS GSQ RCO` quantization, powered by Strata, an excellent inference engine.
+> **Last updated: 11/11/2026** — I upgraded the GPU in my daily driver to an RTX 5070 Ti, keeping the same system memory capacity. With roughly twice the compute performance and memory bandwidth, I’m still running Qwen 3.8 Flash Next with `IQ3_XXS GSQ RCO` quantization, powered by Strata, an excellent inference engine. The context size is now at 256K.
 
 **Another significant step forward!**
 
 **Highlights:**
-- Around **100 tokens/s at 205K context**
+- Around **100 tokens/s at 256K context**
 - Peak performance of up to **150 tokens/s**
 
 Strata continues to deliver excellent inference performance, making this upgrade a worthwhile improvement for my daily local LLM setup.
