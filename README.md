@@ -1,6 +1,6 @@
 # LLM — Local LLM Experiments
 
-A collection of practical local LLM experiments: benchmarking GGUF models with `llama.cpp`, reusable benchmark scripts, server configurations, one-shot HTML generation experiments, and a practical study of context engineering for LLM agents.
+A collection of practical local LLM experiments: benchmarking GGUF models with `llama.cpp`, reusable benchmark scripts, server configurations, one-shot HTML generation experiments, a practical study of context engineering for LLM agents, and a design spec for a harness-side agent progress-reporting tool.
 
 The focus is on **practical usability** of local models (inference speed, memory/VRAM usage, thermal behavior) rather than model quality comparisons.
 
@@ -17,6 +17,7 @@ The focus is on **practical usability** of local models (inference speed, memory
 ├── rtx5060ti-qwen3.8-27b-dflash2-speculative-decoding.md
 ├── context-engineering-practical-experiments.md
 ├── context-engineering-primitives.md
+├── agent-progress.md
 ├── llamacpp/
 │   └── model.ini
 ├── scripts/
@@ -122,6 +123,28 @@ model with stale, contradictory or wrong turns), then **size**, then **performan
 Local inference throughout — it POSTs to a `llama.cpp` OpenAI-compatible server
 (`/v1/chat/completions`, SSE streaming), with an *OpenAI mode* toggle for plain OpenAI-compatible
 backends (vLLM, LM Studio, LiteLLM). TypeScript, Vitest suite, no UI framework, 0BSD like this repo.
+
+## Agent harness design
+
+### [Agent Progress Reporting](agent-progress.md)
+A generic, model-accessible tool that lets the LLM create and maintain its own progression structures
+(steps, milestones, groups or arbitrary items) and publish updates to them, while the harness owns the
+presentation: a compact indicator in the existing status line (`Current Task: Implementing parser ·
+Step 5/10`) plus an expandable detail view.
+
+Key points of the spec:
+
+- **Model-defined structure** — no predefined workflow, hierarchy or status vocabulary; the model decides what to report and how to organize it, and can reshape the structure during execution
+- **Concurrent structures** — multiple progressions can coexist in a single session (different tasks, parallel workflows, multi-agent systems)
+- **Small tool surface** — `create_progress` / `update_progress` / `add_progress_item` / `update_progress_item` / `remove_progress_item` / `delete_progress`, over a minimal `Progress { id, title, description?, items[] }` model
+- **Real time and lightweight** — updates are reflected immediately, tool calls stay simple and inexpensive, and the interface stays non-intrusive
+- **Presentation-independent** — the harness owns rendering; the same data can feed several presentation layers
+- **Architecture-independent** — no assumption about the model, the agent design or the task type
+
+> Status: **design spec / draft** — not implemented in this repo. It pairs naturally with the
+> [context primitives](context-engineering-primitives.md) draft: a progress structure is another form of
+> **externalized state** — durable, cheap-to-update state kept outside the message history instead of
+> being re-derived from it.
 
 ## Benchmark scripts
 
